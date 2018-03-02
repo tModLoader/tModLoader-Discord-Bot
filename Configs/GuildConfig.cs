@@ -28,7 +28,7 @@ namespace dtMLBot.Configs
 			clone.VoteDeleteImmune = VoteDeleteImmune != null ? new HashSet<ulong>(VoteDeleteImmune) : new HashSet<ulong>();
 			clone.Tags = Tags != null ? new Dictionary<ulong, ISet<KeyValTag>>(Tags) : new Dictionary<ulong, ISet<KeyValTag>>();
 			clone.UserRateLimitCounts = UserRateLimitCounts != null ? new Dictionary<ulong, uint>(UserRateLimitCounts) : new Dictionary<ulong, uint>();
-			clone.VoteDeleteReqIds = VoteDeleteReqIds != null ? new HashSet<ulong>(VoteDeleteReqIds) : new HashSet<ulong>(); 
+			clone.VoteDeleteReqIds = VoteDeleteReqIds != null ? new HashSet<ulong>(VoteDeleteReqIds) : new HashSet<ulong>();
 			clone.VoteDeleteWeights = VoteDeleteWeights != null ? new Dictionary<ulong, uint>(VoteDeleteWeights) : new Dictionary<ulong, uint>();
 			//clone.VoteDeleteReqAmount = VoteDeleteReqAmount;
 
@@ -175,14 +175,14 @@ namespace dtMLBot.Configs
 		public bool Equals(GuildConfig other)
 		{
 			return other != null &&
-			       GuildId == other.GuildId &&
-			       EqualityComparer<IDictionary<string, string>>.Default.Equals(StatusAddresses, other.StatusAddresses) &&
-			       EqualityComparer<IDictionary<ulong, ISet<ulong>>>.Default.Equals(StickyRoles, other.StickyRoles) &&
-			       EqualityComparer<ISet<ulong>>.Default.Equals(VoteDeleteImmune, other.VoteDeleteImmune) &&
-			       EqualityComparer<IDictionary<ulong, ISet<KeyValTag>>>.Default.Equals(Tags, other.Tags) &&
-			       EqualityComparer<IDictionary<ulong, uint>>.Default.Equals(UserRateLimitCounts, other.UserRateLimitCounts) &&
-			       EqualityComparer<ISet<ulong>>.Default.Equals(VoteDeleteReqIds, other.VoteDeleteReqIds) &&
-			       EqualityComparer<IDictionary<ulong, uint>>.Default.Equals(VoteDeleteWeights, other.VoteDeleteWeights) &&
+				   GuildId == other.GuildId &&
+				   EqualityComparer<IDictionary<string, string>>.Default.Equals(StatusAddresses, other.StatusAddresses) &&
+				   EqualityComparer<IDictionary<ulong, ISet<ulong>>>.Default.Equals(StickyRoles, other.StickyRoles) &&
+				   EqualityComparer<ISet<ulong>>.Default.Equals(VoteDeleteImmune, other.VoteDeleteImmune) &&
+				   EqualityComparer<IDictionary<ulong, ISet<KeyValTag>>>.Default.Equals(Tags, other.Tags) &&
+				   EqualityComparer<IDictionary<ulong, uint>>.Default.Equals(UserRateLimitCounts, other.UserRateLimitCounts) &&
+				   EqualityComparer<ISet<ulong>>.Default.Equals(VoteDeleteReqIds, other.VoteDeleteReqIds) &&
+				   EqualityComparer<IDictionary<ulong, uint>>.Default.Equals(VoteDeleteWeights, other.VoteDeleteWeights) &&
 				   VoteDeleteReqAmount == other.VoteDeleteReqAmount &&
 				   EqualityComparer<PermissionsConfig>.Default.Equals(Permissions, other.Permissions);
 		}

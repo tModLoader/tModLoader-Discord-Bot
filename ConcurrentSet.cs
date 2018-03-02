@@ -11,26 +11,26 @@ namespace dtMLBot
 {
 	public sealed class ConcurrentSet<T> : ConcurrentDictionary<T, byte>
 	{
-		
-	    public ConcurrentSet() : base()
-	    {
 
-	    }
+		public ConcurrentSet() : base()
+		{
 
-	    public ConcurrentSet(ConcurrentSet<T> e) : base(e.ToArray())
-	    {
+		}
 
-	    }
+		public ConcurrentSet(ConcurrentSet<T> e) : base(e.ToArray())
+		{
 
-		public ConcurrentSet(IEnumerable<T> e)  :base(e.ToDictionary(x => x, y => byte.MinValue))
-	    {
-		    
-	    }
+		}
 
-	    public ConcurrentSet(IEnumerable<KeyValuePair<T, byte>> e) : base(e)
-	    {
+		public ConcurrentSet(IEnumerable<T> e) : base(e.ToDictionary(x => x, y => byte.MinValue))
+		{
 
-	    }
+		}
+
+		public ConcurrentSet(IEnumerable<KeyValuePair<T, byte>> e) : base(e)
+		{
+
+		}
 	}
 
 	public class ConcurrentSetConverter<T> : JsonConverter
