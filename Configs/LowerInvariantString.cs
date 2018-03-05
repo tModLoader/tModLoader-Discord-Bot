@@ -1,4 +1,4 @@
-﻿namespace dtMLBot.Configs
+﻿namespace tModloaderDiscordBot.Configs
 {
 	public struct LowerInvariantString
 	{

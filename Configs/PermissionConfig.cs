@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace dtMLBot.Configs
+namespace tModloaderDiscordBot.Configs
 {
 	public sealed class PermissionsConfig : ICloneable, IEquatable<PermissionsConfig>
 	{

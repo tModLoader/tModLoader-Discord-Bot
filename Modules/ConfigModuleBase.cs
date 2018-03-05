@@ -1,8 +1,8 @@
 ﻿using System;
-using dtMLBot.Configs;
 using Discord.Commands;
+using tModloaderDiscordBot.Configs;
 
-namespace dtMLBot.Modules
+namespace tModloaderDiscordBot.Modules
 {
 	// TODO probably only need Socket context
 	public abstract class ConfigModuleBase<T> : ModuleBase<T> where T : class, ICommandContext

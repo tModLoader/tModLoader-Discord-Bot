@@ -1,13 +1,11 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
-using dtMLBot.Configs;
-using dtMLBot.Preconditions;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using tModloaderDiscordBot.Preconditions;
 
-namespace dtMLBot.Modules
+namespace tModloaderDiscordBot.Modules
 {
 	[Group("vote")]
 	public class VoteModule : ConfigModuleBase<SocketCommandContext>

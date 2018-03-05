@@ -2,12 +2,11 @@
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using dtMLBot.Configs;
-using dtMLBot.Preconditions;
 using Discord;
 using Discord.Commands;
+using tModloaderDiscordBot.Preconditions;
 
-namespace dtMLBot.Modules
+namespace tModloaderDiscordBot.Modules
 {
 	[Group("permission")]
 	[Alias("perm")]

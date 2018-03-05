@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
-namespace dtMLBot.Configs
+namespace tModloaderDiscordBot.Configs
 {
 	public static class ConfigManager
 	{
@@ -17,7 +17,7 @@ namespace dtMLBot.Configs
 		// using semaphore to thread lock as it allows await in asynchronous context
 		private static readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
 
-		private static readonly string BaseDir = Environment.CurrentDirectory;
+		private static readonly string BaseDir = AppContext.BaseDirectory;
 		private static readonly string DataDir = Path.Combine(BaseDir, "data");
 		private static string _guildPath(ulong guildId) => Path.Combine(DataDir, guildId.ToString());
 		private static string _guildConfigPath(ulong guildId) => Path.Combine(_guildPath(guildId), "config.json");

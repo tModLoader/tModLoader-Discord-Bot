@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using dtMLBot.Configs;
 using Discord;
 using Discord.Commands;
+using tModloaderDiscordBot.Configs;
 
-namespace dtMLBot.Modules
+namespace tModloaderDiscordBot.Modules
 {
 	[Group("tag")]
 	[Alias("tags")]

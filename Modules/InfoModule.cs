@@ -2,12 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using dtMLBot.Configs;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
-namespace dtMLBot.Modules
+namespace tModloaderDiscordBot.Modules
 {
 	[Group("info")]
 	public class InfoModule : ConfigModuleBase<SocketCommandContext>
@@ -29,7 +28,7 @@ namespace dtMLBot.Modules
 				ThumbnailUrl = guild.IconUrl,
 				Author = new EmbedAuthorBuilder
 				{
-					Name = $"Requested by {Context.User.Username}#{Context.User.Discriminator}",
+					Name = $"Requested by {Context.User.FullName()}",
 					IconUrl = Context.User.GetAvatarUrl()
 				},
 				Timestamp = DateTimeOffset.UtcNow,

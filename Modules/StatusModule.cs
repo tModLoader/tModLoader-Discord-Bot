@@ -3,11 +3,10 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using dtMLBot.Configs;
-using dtMLBot.Preconditions;
 using Discord.Commands;
+using tModloaderDiscordBot.Preconditions;
 
-namespace dtMLBot.Modules
+namespace tModloaderDiscordBot.Modules
 {
 	[Group("status")]
 	public class StatusModule : ConfigModuleBase<SocketCommandContext>

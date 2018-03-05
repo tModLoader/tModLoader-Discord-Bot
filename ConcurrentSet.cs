@@ -2,13 +2,11 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
 
-namespace dtMLBot
+namespace tModloaderDiscordBot
 {
+	// TODO -> do we need concurrency? no.. ? async = 1 thread
 	public sealed class ConcurrentSet<T> : ConcurrentDictionary<T, byte>
 	{
 

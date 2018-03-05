@@ -1,18 +1,18 @@
-﻿using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
-using dtMLBot.Configs;
+using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
+using tModloaderDiscordBot.Configs;
 
-namespace dtMLBot
+namespace tModloaderDiscordBot
 {
 	public class Program
 	{
@@ -52,6 +52,7 @@ namespace dtMLBot
 			_client.UserLeft += UserLeft;
 			_client.UserJoined += UserJoined;
 			_client.ReactionAdded += ReactionAdded;
+			_client.LatencyUpdated += ClientLatencyUpdated;
 			//_client.Connected += ClientConnected;
 
 			await InstallCommandsAsync();
@@ -66,11 +67,23 @@ namespace dtMLBot
 				await Task.Delay(-1);
 			}
 
+			Console.Title = $"tModLoader Bot - {AppContext.BaseDirectory} - {await ModsManager.GetTMLVersion()}";
+			await Console.Out.WriteLineAsync($"https://discordapp.com/api/oauth2/authorize?client_id=&scope=bot");
+			await Console.Out.WriteLineAsync($"Start date: {DateTime.Now}");
+
 			token = File.ReadAllText(tokenPath);
 			await _client.LoginAsync(TokenType.Bot, token);
 			await _client.StartAsync();
 
 			await Task.Delay(-1);
+		}
+
+		private async Task ClientLatencyUpdated(int i, int j)
+		{
+			await _client.SetStatusAsync(
+				_client.ConnectionState == ConnectionState.Disconnected || j > 500 ? UserStatus.DoNotDisturb
+				: _client.ConnectionState == ConnectionState.Connecting || j > 250 ? UserStatus.Idle
+				: UserStatus.Online);
 		}
 
 		private async Task ReactionAdded(Cacheable<IUserMessage, ulong> cacheable, ISocketMessageChannel channelParam, SocketReaction reaction)
@@ -194,6 +207,8 @@ namespace dtMLBot
 		{
 			BotOwner = (await _client.GetApplicationInfoAsync()).Owner;
 			await ConfigManager.Initialize();
+			await ModsManager.Initialize();
+			await ModsManager.Maintain(_client);
 
 			foreach (var guild in _client.Guilds)
 				if (!ConfigManager.IsGuildManaged(guild.Id))
@@ -201,7 +216,7 @@ namespace dtMLBot
 
 			var timer = new Timer(async o =>
 				{
-					await Task.Run(() =>
+					await Task.Run(async () =>
 					{
 						var now = DateTimeOffset.UtcNow;
 
@@ -212,10 +227,22 @@ namespace dtMLBot
 						RateLimitedUsers = RateLimitedUsers
 							.Where(x => now < x.Value)
 							.ToDictionary(x => x.Key, x => x.Value);
+
+						try
+						{
+							await ModsManager.Maintain(_client);
+						}
+						catch (Exception e)
+						{
+							await Log(new LogMessage(LogSeverity.Critical, "SystemMain", "", e));
+						}
 					});
 				}, null,
 				TimeSpan.FromMinutes(5),
 				TimeSpan.FromMinutes(5));
+
+
+			await _client.SetGameAsync($"tModLoader {ModsManager.GetTMLVersion()}", type: ActivityType.Playing);
 		}
 
 		//private async Task ClientConnected()
@@ -324,7 +351,9 @@ namespace dtMLBot
 			try
 			{
 				if (!(messageParam is SocketUserMessage message)
-					|| message.Author.IsBot) return;
+					|| message.Author.IsBot
+					|| message.Author.IsWebhook
+					|| message.Channel is SocketDMChannel) return;
 
 				var author = message.Author;
 				TrackRateLimit(author.Id, message);

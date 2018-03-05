@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 
-namespace dtMLBot.Configs
+namespace tModloaderDiscordBot.Configs
 {
 	public sealed class GuildConfig : ICloneable, IEquatable<GuildConfig>
 	{

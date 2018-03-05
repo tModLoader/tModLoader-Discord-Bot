@@ -1,11 +1,11 @@
-﻿using Discord;
-using Discord.Commands;
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using dtMLBot.Configs;
+using Discord;
+using Discord.Commands;
+using tModloaderDiscordBot.Configs;
 
-namespace dtMLBot.Preconditions
+namespace tModloaderDiscordBot.Preconditions
 {
 	internal class HasPermissionAttribute : PreconditionAttribute
 	{

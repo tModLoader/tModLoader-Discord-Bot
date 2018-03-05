@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
-namespace dtMLBot.Configs
+namespace tModloaderDiscordBot.Configs
 {
 	public sealed class KeyValTag : ICloneable, IEquatable<KeyValTag>
 	{
