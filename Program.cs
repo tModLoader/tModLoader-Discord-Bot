@@ -38,8 +38,15 @@ namespace tModloaderDiscordBot
 			RateLimitedUsers = new ConcurrentDictionary<ulong, DateTimeOffset>();
 			VotesForRemoval = new HashSet<ulong>();
 
-			_client = new DiscordSocketClient();
-			_commands = new CommandService();
+			_client = new DiscordSocketClient(new DiscordSocketConfig
+			{
+				AlwaysDownloadUsers = true
+			});
+			_commands = new CommandService(new CommandServiceConfig
+			{
+				DefaultRunMode = RunMode.Async,
+				CaseSensitiveCommands = false
+			});
 
 			_services = new ServiceCollection()
 				.AddSingleton(_client)
@@ -58,7 +65,7 @@ namespace tModloaderDiscordBot
 			await InstallCommandsAsync();
 
 			// TODO token.txt
-			var tokenPath = Path.Combine(Environment.CurrentDirectory, "bot.token");
+			var tokenPath = Path.Combine(AppContext.BaseDirectory, "bot.token");
 			string token = "";
 
 			if (!File.Exists(tokenPath))
@@ -242,7 +249,7 @@ namespace tModloaderDiscordBot
 				TimeSpan.FromMinutes(5));
 
 
-			await _client.SetGameAsync($"tModLoader {ModsManager.GetTMLVersion()}", type: ActivityType.Playing);
+			await _client.SetGameAsync($"tModLoader {await ModsManager.GetTMLVersion()}", type: ActivityType.Playing);
 		}
 
 		//private async Task ClientConnected()

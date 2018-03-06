@@ -156,31 +156,35 @@ namespace tModloaderDiscordBot.Modules
 				}
 
 				Config.CreateStickyRole(role.Id);
-				await Config.Update();
+				//await Config.Update();
 				var txt = $"`{role.Name}` is now a sticky role.";
 				var msg = await ReplyAsync(txt + "\nCounting users to be stickied...");
 
-				try
+				await Task.Run(async () =>
 				{
-					var c = 0;
-					await Context.Guild.DownloadUsersAsync();
-					foreach (var user in Context.Guild.Users.Where(x => x.Roles.Contains(role)))
+					try
 					{
-						if (Config.GiveStickyRole(role.Id, user.Id))
-							++c;
+
+						var c = 0;
+						await Context.Guild.DownloadUsersAsync();
+						foreach (var user in Context.Guild.Users.Where(x => x.Roles.Contains(role)))
+						{
+							if (Config.GiveStickyRole(role.Id, user.Id))
+								++c;
+						}
+
+						if (c > 0)
+							await Config.Update();
+
+						await msg.ModifyAsync(x =>
+							x.Content = $"{txt}\n{c} users were stickied.");
 					}
-
-					if (c > 0)
-						await Config.Update();
-
-					await msg.ModifyAsync(x =>
-						x.Content = $"{txt}\n{c} users were stickied.");
-				}
-				catch (Exception)
-				{
-					await msg.ModifyAsync(x =>
-						x.Content = $"{txt}\nFailed stickying users.");
-				}
+					catch (Exception)
+					{
+						await msg.ModifyAsync(x =>
+							x.Content = $"{txt}\nFailed stickying users.");
+					}
+				});
 			}
 
 			[Command("delete")]
