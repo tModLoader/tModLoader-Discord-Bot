@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -13,6 +15,8 @@ namespace tModloaderDiscordBot.Modules
 	[HasPermission]
 	public class PermissionModule : ConfigModuleBase<SocketCommandContext>
 	{
+
+
 		public PermissionModule(CommandService commandService) : base(commandService)
 		{
 		}
@@ -20,8 +24,35 @@ namespace tModloaderDiscordBot.Modules
 		[Group("admin")]
 		public class AdminModule : ConfigModuleBase<SocketCommandContext>
 		{
+			private static bool resetFlag;
+
 			public AdminModule(CommandService commandService) : base(commandService)
 			{
+			}
+
+			[Command("reset")]
+			[ServerOwnerOnly]
+			public async Task ResetAsync([Remainder]string rem = "")
+			{
+				if (!resetFlag)
+				{
+					await ReplyAsync("You are about to reset all permissions, are you sure you want to continue? Issue the command again within 1 minute to affirm.");
+					resetFlag = true;
+					await Task.Delay(TimeSpan.FromMinutes(1));
+					resetFlag = false;
+				}
+				else
+				{
+					int admins = Config.Permissions.Admins.Count;
+					Config.Permissions.Admins.Clear();
+					int perms = Config.Permissions.Permissions.Count;
+					Config.Permissions.Permissions.Clear();
+					int blocked = Config.Permissions.Blocked.Count;
+					Config.Permissions.Blocked.Clear();
+					await Config.Update();
+					resetFlag = false;
+					await ReplyAsync($"All permission were reset. Removed {admins} admins, {perms} permissions and {blocked} blocks.");
+				}
 			}
 
 			[Command("assign")]

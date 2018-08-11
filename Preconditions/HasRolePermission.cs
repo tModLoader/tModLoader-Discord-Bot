@@ -33,6 +33,7 @@ namespace tModloaderDiscordBot.Preconditions
 			if (cmd == null)
 				return PreconditionResult.FromError("Module not found");
 
+			// check if has permission by module name
 			cmd = $"module:{cmd}";
 			hasPerm = config.Permissions.MapHasPermissionsFor(cmd);
 			if (!hasPerm)
@@ -42,23 +43,25 @@ namespace tModloaderDiscordBot.Preconditions
 					return PreconditionResult.FromError("Command not found");
 
 				hasPerm = config.Permissions.MapHasPermissionsFor(cmd);
+				// check if user has permission for command
+				if (!hasPerm) hasPerm = config.Permissions.HasPermission(cmd, context.User.Id);
+				if (!hasPerm)
+				{
+					// check if user has roles that have permission
+					if (!(context.User is IGuildUser guildUser))
+						return PreconditionResult.FromError("");
+
+					hasPerm = guildUser.RoleIds.Any(roleId => config.Permissions.HasPermission(cmd, roleId));
+				}
 			}
+
+			if (config.Permissions.IsBlocked(context.User.Id))
+				return PreconditionResult.FromError("User is blocked");
 
 			if (!hasPerm)
 				return PreconditionResult.FromError($"No permissions setup for the command `{cmd}` but required to use it.");
 
-			if (config.Permissions.IsBlocked(context.User.Id))
-				return PreconditionResult.FromError("");
-
-			if (!(context.User is IGuildUser guildUser))
-				return PreconditionResult.FromError("");
-
-			if (config.Permissions.HasPermission(cmd, context.User.Id))
-				return PreconditionResult.FromSuccess();
-
-			return guildUser.RoleIds.Any(roleId => config.Permissions.HasPermission(cmd, roleId))
-					? PreconditionResult.FromSuccess()
-					: PreconditionResult.FromError("");
+			return PreconditionResult.FromSuccess();
 		}
 	}
 }

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -22,7 +23,6 @@ namespace tModloaderDiscordBot.Modules
 		/// Returns bot response time
 		/// </summary>
 		[Command("ping")]
-		[Alias("status")]
 		[Summary("Returns the bot response time")]
 		[Remarks("ping")]
 		public async Task Ping([Remainder] string rem = null)
@@ -53,18 +53,28 @@ namespace tModloaderDiscordBot.Modules
 		public async Task Widget([Remainder]string mod)
 		{
 			mod = mod.RemoveWhitespace();
-			var result = await ShowSimilarMods(mod);
+			var (result,str) = await ShowSimilarMods(mod);
 
 			if (result)
 			{
-				var msg = await ReplyAsync("Generating widget...");
-				using (var client = new System.Net.Http.HttpClient())
+				var modFound = ModsManager.Mods.FirstOrDefault(x => x.EqualsIgnoreCase(mod));
+
+				if (modFound != null)
 				{
-					var response = await client.GetByteArrayAsync($"{ModsManager.WidgetUrl}{mod}.png");
-					using (var stream = new MemoryStream(response))
-						await Context.Channel.SendFileAsync(stream, $"widget-{mod}.png");
+					var msg = await ReplyAsync($"Generating widget for {modFound}...");
+
+					// need perfect string.
+
+					using (var client = new System.Net.Http.HttpClient())
+					{
+						var response = await client.GetByteArrayAsync($"{ModsManager.WidgetUrl}{modFound}.png");
+						using (var stream = new MemoryStream(response))
+						{
+							await Context.Channel.SendFileAsync(stream, $"widget-{modFound}.png");
+						}
+					}
+					await msg.DeleteAsync();
 				}
-				await msg.DeleteAsync();
 			}
 
 		}
@@ -76,6 +86,7 @@ namespace tModloaderDiscordBot.Modules
 		[Alias("modinfo")]
 		[Summary("Shows info about a mod")]
 		[Remarks("mod <internal modname> --OR-- mod <part of name>\nmod examplemod")]
+		[Priority(-99)]
 		public async Task Mod([Remainder] string mod)
 		{
 			mod = mod.RemoveWhitespace();
@@ -86,14 +97,18 @@ namespace tModloaderDiscordBot.Modules
 				return;
 			}
 
-			var result = await ShowSimilarMods(mod);
+			var (result, str) = await ShowSimilarMods(mod);
 
 			if (result)
 			{
-				// Fixes not finding files
-				mod = ModsManager.Mods.FirstOrDefault(m => string.Equals(m, mod, StringComparison.CurrentCultureIgnoreCase));
-				if (mod == null)
-					return;
+				if (string.IsNullOrEmpty(str))
+				{
+					// Fixes not finding files
+					mod = ModsManager.Mods.FirstOrDefault(m => string.Equals(m, mod, StringComparison.CurrentCultureIgnoreCase));
+					if (mod == null)
+						return;
+				}
+				else mod = str;
 
 				// Some mod is found continue.
 				var modjson = JObject.Parse(await BotUtils.FileReadToEndAsync(new SemaphoreSlim(1, 1), ModsManager.ModPath(mod)));
@@ -150,13 +165,13 @@ namespace tModloaderDiscordBot.Modules
 		}
 
 		// Helper method
-		private async Task<bool> ShowSimilarMods(string mod)
+		private async Task<(bool,string)> ShowSimilarMods(string mod)
 		{
 			var mods = ModsManager.Mods.Where(m => string.Equals(m, mod, StringComparison.CurrentCultureIgnoreCase));
 
-			if (mods.Any()) return true;
+			if (mods.Any()) return (true, string.Empty);
 			var cached = await ModsManager.TryCacheMod(mod);
-			if (cached) return true;
+			if (cached) return (true, string.Empty);
 
 			const string msg = "Mod with that name doesn\'t exist";
 			var modMsg = "\nNo similar mods found..."; ;
@@ -171,6 +186,8 @@ namespace tModloaderDiscordBot.Modules
 
 			if (similarMods.Any())
 			{
+				if (similarMods.Length == 1) return (true, similarMods.First());
+
 				modMsg = "\nDid you possibly mean any of these?\n" + similarMods.PrettyPrint();
 				// Make sure message doesn't exceed discord's max msg length
 				if (modMsg.Length > 2000)
@@ -185,7 +202,34 @@ namespace tModloaderDiscordBot.Modules
 			}
 
 			await ReplyAsync($"{msg}{modMsg}");
-			return false;
+			return (false, string.Empty);
 		}
+
+		
+
+		//[Command("modcompile")]
+		//public async Task ModCompile(string src)
+		//{
+		//	Uri uriResult;
+		//	bool result = Uri.TryCreate(src, UriKind.Absolute, out uriResult)
+		//	              && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+
+		//	if (!result || !src.EndsWith(".zip"))
+		//	{
+		//		await ReplyAsync("Given is not URL. You must send a .zip file of the mod source. Make sure it is not in a separate directory.");
+		//		return;
+		//	}
+
+		//	UpdateModule.Bash($@"rm -rf modcompiles/{Context.User.Id}");
+		//	UpdateModule.Bash($@"mkdir modcompiles/{Context.User.Id}");
+		//	UpdateModule.Bash($@"wget {src} -P modcompiles/{Context.User.Id}/");
+		//	UpdateModule.Bash($@"unzip modcompiles/{Context.User.Id}/*.zip -d modcompiles/{Context.User.Id}/");
+		//	UpdateModule.Bash($@"rm modcompiles/{Context.User.Id}/*.zip");
+		//	string compile = UpdateModule.Bash($"\"/home/jofairden/tmlbot/tml/tModLoaderServer.bin.x86_64\" -build \"modcompiles/{Context.User.Id}/\"");
+		//	await ReplyAsync(compile);
+		//	UpdateModule.Bash($@"rm -rf modcompiles/{Context.User.Id}");
+		//	await ReplyAsync("Done?");
+		//}
+
 	}
 }

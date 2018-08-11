@@ -3,16 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
+using Newtonsoft.Json;
 
 namespace tModloaderDiscordBot.Configs
 {
 	public sealed class GuildConfig : ICloneable, IEquatable<GuildConfig>
 	{
 		public ulong GuildId;
-		public IDictionary<ulong, ISet<ulong>> StickyRoles; // roles that are stickied -> reapplies when leaving and rejoining
+		public IDictionary<ulong, IList<ulong>> StickyRoles; // roles that are stickied -> reapplies when leaving and rejoining
 		public IDictionary<string, string> StatusAddresses; // addresses that can be checked with .status
+		[JsonIgnore] public IDictionary<string, string> StatusAddressesCache; // statuse cached every 5 mins
 		public ISet<ulong> VoteDeleteImmune; // IDs immune to vote deletion
-		public IDictionary<ulong, ISet<KeyValTag>> Tags; // stored tags, uid -> set of tags
+		public IDictionary<ulong, IList<KeyValTag>> Tags; // stored tags, uid -> set of tags
 		public IDictionary<ulong, uint> UserRateLimitCounts; // uid -> number of rate limits
 		public ISet<ulong> VoteDeleteReqIds; // req ids (role/usr) for vote deletion
 		public IDictionary<ulong, uint> VoteDeleteWeights; // id -> vote weight (admin=3 etc.)
@@ -23,17 +25,20 @@ namespace tModloaderDiscordBot.Configs
 		public object Clone()
 		{
 			var clone = (GuildConfig)this.MemberwiseClone();
-			clone.StickyRoles = StickyRoles != null ? new Dictionary<ulong, ISet<ulong>>(StickyRoles) : new Dictionary<ulong, ISet<ulong>>();
+			clone.StickyRoles = StickyRoles != null ? new Dictionary<ulong, IList<ulong>>(StickyRoles) : new Dictionary<ulong, IList<ulong>>();
 			clone.StatusAddresses = StatusAddresses != null ? new Dictionary<string, string>(StatusAddresses) : new Dictionary<string, string>();
+			clone.StatusAddressesCache = StatusAddressesCache != null ? new Dictionary<string, string>(StatusAddressesCache) : new Dictionary<string, string>();
 			clone.VoteDeleteImmune = VoteDeleteImmune != null ? new HashSet<ulong>(VoteDeleteImmune) : new HashSet<ulong>();
-			clone.Tags = Tags != null ? new Dictionary<ulong, ISet<KeyValTag>>(Tags) : new Dictionary<ulong, ISet<KeyValTag>>();
+			clone.Tags = Tags != null ? new Dictionary<ulong, IList<KeyValTag>>(Tags) : new Dictionary<ulong, IList<KeyValTag>>();
 			clone.UserRateLimitCounts = UserRateLimitCounts != null ? new Dictionary<ulong, uint>(UserRateLimitCounts) : new Dictionary<ulong, uint>();
 			clone.VoteDeleteReqIds = VoteDeleteReqIds != null ? new HashSet<ulong>(VoteDeleteReqIds) : new HashSet<ulong>();
 			clone.VoteDeleteWeights = VoteDeleteWeights != null ? new Dictionary<ulong, uint>(VoteDeleteWeights) : new Dictionary<ulong, uint>();
 			//clone.VoteDeleteReqAmount = VoteDeleteReqAmount;
 
 			if (Permissions != null)
+			{
 				clone.Permissions = (PermissionsConfig)Permissions.Clone();
+			}
 			else
 			{
 				clone.Permissions = new PermissionsConfig();
@@ -47,18 +52,23 @@ namespace tModloaderDiscordBot.Configs
 			var clone = (GuildConfig)Clone();
 
 			if (StickyRoles == null)
-				StickyRoles = new Dictionary<ulong, ISet<ulong>>();
+				StickyRoles = new Dictionary<ulong, IList<ulong>>();
 
 			if (StatusAddresses == null)
 				StatusAddresses = new Dictionary<string, string>();
 
 			StatusAddresses = StatusAddresses.Where(x => !string.IsNullOrEmpty(x.Value)).ToDictionary(x => x.Key, x => x.Value);
 
+			if (StatusAddressesCache == null)
+				StatusAddressesCache = new Dictionary<string, string>();
+
+			StatusAddressesCache = StatusAddressesCache.Where(x => !string.IsNullOrEmpty(x.Value)).ToDictionary(x => x.Key, x => x.Value);
+
 			if (VoteDeleteImmune == null)
 				VoteDeleteImmune = new HashSet<ulong>();
 
 			if (Tags == null)
-				Tags = new Dictionary<ulong, ISet<KeyValTag>>();
+				Tags = new Dictionary<ulong, IList<KeyValTag>>();
 
 			if (UserRateLimitCounts == null)
 				UserRateLimitCounts = new Dictionary<ulong, uint>();
@@ -144,7 +154,7 @@ namespace tModloaderDiscordBot.Configs
 			=> StickyRoles.Where(x => x.Value.Contains(userId)).Select(x => x.Key);
 
 		public void CreateStickyRole(ulong roleId)
-			=> StickyRoles.Add(roleId, new HashSet<ulong>());
+			=> StickyRoles.Add(roleId, new List<ulong>());
 
 		public bool DeleteStickyRole(ulong roleId)
 			=> StickyRoles.Remove(roleId);
@@ -159,11 +169,15 @@ namespace tModloaderDiscordBot.Configs
 		{
 			if (!IsStickyRole(roleId))
 				CreateStickyRole(roleId);
-			return StickyRoles[roleId].Add(userId);
+			StickyRoles[roleId].Add(userId);
+			return true;
 		}
 
 		public bool TakeStickyRole(ulong roleId, ulong userId)
 			=> IsStickyRole(roleId) && StickyRoles[roleId].Remove(userId);
+
+		public bool IsStatusAdressCached(string key)
+			=> StatusAddressesCache.ContainsKey(key);
 		#endregion
 
 		public async Task Update()
@@ -172,39 +186,30 @@ namespace tModloaderDiscordBot.Configs
 			await ConfigManager.UpdateForGuild(this);
 		}
 
-		public bool Equals(GuildConfig other)
+		public override bool Equals(object obj)
 		{
-			return other != null &&
-				   GuildId == other.GuildId &&
-				   EqualityComparer<IDictionary<string, string>>.Default.Equals(StatusAddresses, other.StatusAddresses) &&
-				   EqualityComparer<IDictionary<ulong, ISet<ulong>>>.Default.Equals(StickyRoles, other.StickyRoles) &&
-				   EqualityComparer<ISet<ulong>>.Default.Equals(VoteDeleteImmune, other.VoteDeleteImmune) &&
-				   EqualityComparer<IDictionary<ulong, ISet<KeyValTag>>>.Default.Equals(Tags, other.Tags) &&
-				   EqualityComparer<IDictionary<ulong, uint>>.Default.Equals(UserRateLimitCounts, other.UserRateLimitCounts) &&
-				   EqualityComparer<ISet<ulong>>.Default.Equals(VoteDeleteReqIds, other.VoteDeleteReqIds) &&
-				   EqualityComparer<IDictionary<ulong, uint>>.Default.Equals(VoteDeleteWeights, other.VoteDeleteWeights) &&
-				   VoteDeleteReqAmount == other.VoteDeleteReqAmount &&
-				   EqualityComparer<PermissionsConfig>.Default.Equals(Permissions, other.Permissions);
+			if (ReferenceEquals(null, obj)) return false;
+			if (ReferenceEquals(this, obj)) return true;
+			return obj is GuildConfig && Equals((GuildConfig) obj);
 		}
 
 		public override int GetHashCode()
 		{
-			var hashCode = 2077117607;
-			hashCode = hashCode * -1521134295 + GuildId.GetHashCode();
-			hashCode = hashCode * -1521134295 + EqualityComparer<IDictionary<string, string>>.Default.GetHashCode(StatusAddresses);
-			hashCode = hashCode * -1521134295 + EqualityComparer<IDictionary<ulong, ISet<ulong>>>.Default.GetHashCode(StickyRoles);
-			hashCode = hashCode * -1521134295 + EqualityComparer<ISet<ulong>>.Default.GetHashCode(VoteDeleteImmune);
-			hashCode = hashCode * -1521134295 + EqualityComparer<IDictionary<ulong, ISet<KeyValTag>>>.Default.GetHashCode(Tags);
-			hashCode = hashCode * -1521134295 + EqualityComparer<IDictionary<ulong, uint>>.Default.GetHashCode(UserRateLimitCounts);
-			hashCode = hashCode * -1521134295 + EqualityComparer<ISet<ulong>>.Default.GetHashCode(VoteDeleteReqIds);
-			hashCode = hashCode * -1521134295 + VoteDeleteReqAmount.GetHashCode();
-			hashCode = hashCode * -1521134295 + EqualityComparer<PermissionsConfig>.Default.GetHashCode(Permissions);
-			return hashCode;
-		}
-
-		public override bool Equals(object obj)
-		{
-			return obj is GuildConfig config && Equals(config);
+			unchecked
+			{
+				var hashCode = GuildId.GetHashCode();
+				hashCode = (hashCode * 397) ^ (StickyRoles != null ? StickyRoles.GetHashCode() : 0);
+				hashCode = (hashCode * 397) ^ (StatusAddresses != null ? StatusAddresses.GetHashCode() : 0);
+				hashCode = (hashCode * 397) ^ (StatusAddressesCache != null ? StatusAddressesCache.GetHashCode() : 0);
+				hashCode = (hashCode * 397) ^ (VoteDeleteImmune != null ? VoteDeleteImmune.GetHashCode() : 0);
+				hashCode = (hashCode * 397) ^ (Tags != null ? Tags.GetHashCode() : 0);
+				hashCode = (hashCode * 397) ^ (UserRateLimitCounts != null ? UserRateLimitCounts.GetHashCode() : 0);
+				hashCode = (hashCode * 397) ^ (VoteDeleteReqIds != null ? VoteDeleteReqIds.GetHashCode() : 0);
+				hashCode = (hashCode * 397) ^ (VoteDeleteWeights != null ? VoteDeleteWeights.GetHashCode() : 0);
+				hashCode = (hashCode * 397) ^ (int) VoteDeleteReqAmount;
+				hashCode = (hashCode * 397) ^ (Permissions != null ? Permissions.GetHashCode() : 0);
+				return hashCode;
+			}
 		}
 
 		public static bool operator ==(GuildConfig config1, GuildConfig config2)
@@ -215,6 +220,13 @@ namespace tModloaderDiscordBot.Configs
 		public static bool operator !=(GuildConfig config1, GuildConfig config2)
 		{
 			return !(config1 == config2);
+		}
+
+		public bool Equals(GuildConfig other)
+		{
+			if (ReferenceEquals(null, other)) return false;
+			if (ReferenceEquals(this, other)) return true;
+			return GuildId == other.GuildId && Equals(StickyRoles, other.StickyRoles) && Equals(StatusAddresses, other.StatusAddresses) && Equals(VoteDeleteImmune, other.VoteDeleteImmune) && Equals(Tags, other.Tags) && Equals(UserRateLimitCounts, other.UserRateLimitCounts) && Equals(VoteDeleteReqIds, other.VoteDeleteReqIds) && Equals(VoteDeleteWeights, other.VoteDeleteWeights) && VoteDeleteReqAmount == other.VoteDeleteReqAmount && Equals(Permissions, other.Permissions);
 		}
 	}
 

@@ -80,26 +80,22 @@ namespace tModloaderDiscordBot.Configs
 				&& MapHasPermissionsFor(str)
 				&& Permissions[str.GetText()].Contains(id);
 
-		public bool Equals(PermissionsConfig other)
+		public override bool Equals(object obj)
 		{
-			return other != null &&
-				   EqualityComparer<IDictionary<string, ISet<ulong>>>.Default.Equals(Permissions, other.Permissions) &&
-				   EqualityComparer<ISet<ulong>>.Default.Equals(Admins, other.Admins) &&
-				   EqualityComparer<ISet<ulong>>.Default.Equals(Blocked, other.Blocked);
+			if (ReferenceEquals(null, obj)) return false;
+			if (ReferenceEquals(this, obj)) return true;
+			return obj is PermissionsConfig config && Equals(config);
 		}
 
 		public override int GetHashCode()
 		{
-			var hashCode = -1619210962;
-			hashCode = hashCode * -1521134295 + EqualityComparer<IDictionary<string, ISet<ulong>>>.Default.GetHashCode(Permissions);
-			hashCode = hashCode * -1521134295 + EqualityComparer<ISet<ulong>>.Default.GetHashCode(Admins);
-			hashCode = hashCode * -1521134295 + EqualityComparer<ISet<ulong>>.Default.GetHashCode(Blocked);
-			return hashCode;
-		}
-
-		public override bool Equals(object obj)
-		{
-			return obj is PermissionsConfig config && Equals(config);
+			unchecked
+			{
+				var hashCode = (Permissions != null ? Permissions.GetHashCode() : 0);
+				hashCode = (hashCode * 397) ^ (Admins != null ? Admins.GetHashCode() : 0);
+				hashCode = (hashCode * 397) ^ (Blocked != null ? Blocked.GetHashCode() : 0);
+				return hashCode;
+			}
 		}
 
 		public static bool operator ==(PermissionsConfig config1, PermissionsConfig config2)
@@ -110,6 +106,13 @@ namespace tModloaderDiscordBot.Configs
 		public static bool operator !=(PermissionsConfig config1, PermissionsConfig config2)
 		{
 			return !(config1 == config2);
+		}
+
+		public bool Equals(PermissionsConfig other)
+		{
+			if (ReferenceEquals(null, other)) return false;
+			if (ReferenceEquals(this, other)) return true;
+			return Equals(Permissions, other.Permissions) && Equals(Admins, other.Admins) && Equals(Blocked, other.Blocked);
 		}
 	}
 }

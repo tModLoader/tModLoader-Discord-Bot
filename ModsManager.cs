@@ -55,8 +55,8 @@ namespace tModloaderDiscordBot
 		internal const string PopularUrl = "http://javid.ddns.net/tModLoader/tools/populartop10.php";
 		internal const string HotUrl = "http://javid.ddns.net/tModLoader/BotUtils/hottop10.php";
 
-		private static string ModDir =>
-			Path.Combine(AppContext.BaseDirectory, "mods");
+		private static string ModDir => "mods";
+		internal static string tMLVersion;
 
 		public static string ModPath(string modname) =>
 			Path.Combine(ModDir, $"{modname}.json");
@@ -68,6 +68,7 @@ namespace tModloaderDiscordBot
 		public static async Task Initialize()
 		{
 			//Mods = new List<Mod>();
+			tMLVersion = await GetTMLVersion();
 		}
 
 		//public static bool HasMod(Mod mod)
@@ -130,18 +131,25 @@ namespace tModloaderDiscordBot
 		/// </summary>
 		private static async Task<string> DownloadData()
 		{
+			await Program.Log(new LogMessage(LogSeverity.Info, "ModsManager", $"Requesting DownloadData. tMod version: {tMLVersion}"));
 			using (var client = new System.Net.Http.HttpClient())
 			{
 				//var version = await GetTMLVersion();
 
 				var values = new Dictionary<string, string>
 				{
-					{ "modloaderversion", $"tModLoader {GetTMLVersion()}" },
+					{ "modloaderversion", $"tModLoader {tMLVersion}" },
 					{ "platform", "w"}
 				};
 				var content = new System.Net.Http.FormUrlEncodedContent(values);
+
+				await Program.Log(new LogMessage(LogSeverity.Info, "ModsManager", "Sending post request"));
 				var response = await client.PostAsync(XmlUrl, content);
+
+				await Program.Log(new LogMessage(LogSeverity.Info, "ModsManager", "Reading post request"));
 				var postResponse = await response.Content.ReadAsStringAsync();
+
+				await Program.Log(new LogMessage(LogSeverity.Info, "ModsManager", "Done downloading data"));
 				return postResponse;
 			}
 		}

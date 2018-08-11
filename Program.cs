@@ -65,7 +65,7 @@ namespace tModloaderDiscordBot
 			await InstallCommandsAsync();
 
 			// TODO token.txt
-			var tokenPath = Path.Combine(AppContext.BaseDirectory, "bot.token");
+			var tokenPath = "bot.token";
 			string token = "";
 
 			if (!File.Exists(tokenPath))
@@ -78,7 +78,7 @@ namespace tModloaderDiscordBot
 			await Console.Out.WriteLineAsync($"https://discordapp.com/api/oauth2/authorize?client_id=&scope=bot");
 			await Console.Out.WriteLineAsync($"Start date: {DateTime.Now}");
 
-			token = File.ReadAllText(tokenPath);
+			token = File.ReadAllText(tokenPath).Trim();
 			await _client.LoginAsync(TokenType.Bot, token);
 			await _client.StartAsync();
 
@@ -212,19 +212,27 @@ namespace tModloaderDiscordBot
 		/// </summary>
 		private async Task ClientReady()
 		{
-			BotOwner = (await _client.GetApplicationInfoAsync()).Owner;
-			await ConfigManager.Initialize();
-			await ModsManager.Initialize();
-			await ModsManager.Maintain(_client);
+			await _client.SetGameAsync($"Starting...", type: ActivityType.Playing);
 
+			BotOwner = (await _client.GetApplicationInfoAsync()).Owner;
+
+			await Log(new LogMessage(LogSeverity.Info, "ClientReady", "Initializing ConfigManager"));
+			await ConfigManager.Initialize();
+
+			await Log(new LogMessage(LogSeverity.Info, "ClientReady", "Initializing ModsManager"));
+			await ModsManager.Initialize();
+
+			await Log(new LogMessage(LogSeverity.Info, "ClientReady", "Initializing Guilds"));
 			foreach (var guild in _client.Guilds)
 				if (!ConfigManager.IsGuildManaged(guild.Id))
 					await ConfigManager.SetupForGuild(guild.Id);
 
+			await Log(new LogMessage(LogSeverity.Info, "ClientReady", "Setting update timer"));
 			var timer = new Timer(async o =>
 				{
 					await Task.Run(async () =>
 					{
+						await Log(new LogMessage(LogSeverity.Critical, "SystemMain", "Starting maintenance"));
 						var now = DateTimeOffset.UtcNow;
 
 						Cooldowns = Cooldowns
@@ -245,11 +253,33 @@ namespace tModloaderDiscordBot
 						}
 					});
 				}, null,
+				TimeSpan.FromMinutes(1),
+				TimeSpan.FromMinutes(1));
+
+			var timerStatusCache = new Timer(async o =>
+				{
+					await Task.Run(async () =>
+					{
+						await Log(new LogMessage(LogSeverity.Critical, "SystemMain", "Clearing status addresses cache"));
+						foreach (var clientGuild in _client.Guilds)
+						{
+							if (ConfigManager.GetManagedConfig(clientGuild.Id) is GuildConfig config)
+							{
+								config.StatusAddressesCache.Clear();
+							}
+						}
+					});
+				}, null,
 				TimeSpan.FromMinutes(5),
 				TimeSpan.FromMinutes(5));
 
+			await Log(new LogMessage(LogSeverity.Info, "ClientReady", "Setting game"));
+			await _client.SetGameAsync($"tModLoader {ModsManager.tMLVersion}", type: ActivityType.Playing);
 
-			await _client.SetGameAsync($"tModLoader {await ModsManager.GetTMLVersion()}", type: ActivityType.Playing);
+			await Log(new LogMessage(LogSeverity.Info, "ClientReady", "Maintaining ModsManager"));
+			await ModsManager.Maintain(_client);
+
+			await Log(new LogMessage(LogSeverity.Info, "ClientReady", "Done."));
 		}
 
 		//private async Task ClientConnected()
@@ -282,7 +312,7 @@ namespace tModloaderDiscordBot
 			=> IsTracked(userId) && RateLimits.Remove(userId);
 
 		private static bool NeedsRateLimit(ulong userId)
-			=> IsTracked(userId) && RateLimits[userId].Item1.Count >= 5 && RateLimits[userId].Item2.TotalSeconds <= 10;
+			=> IsTracked(userId) && RateLimits[userId].Item1.Count >= 5 && RateLimits[userId].Item2.TotalSeconds <= 4;
 
 		private static bool NeedsTrackingClear(ulong userId)
 			=> IsTracked(userId) && RateLimits[userId].Item2.TotalSeconds > 10;
@@ -434,7 +464,8 @@ namespace tModloaderDiscordBot
 					UntrackRateLimit(author.Id);
 
 				var argPos = 0;
-				if (!(message.HasCharPrefix('.', ref argPos)
+				if (message.Content.EqualsIgnoreCase(".")
+				|| !(message.HasCharPrefix('.', ref argPos)
 					/*|| message.HasMentionPrefix(_client.CurrentUser, ref argPos))*/))
 					return;
 
@@ -457,10 +488,31 @@ namespace tModloaderDiscordBot
 							if (!config.HasTagKey(author.Id, key))
 							{
 								if (config.AnyKeyName(key))
-									result = await _commands.ExecuteAsync(context, $"tag -f {message.Content.Substring(1)}", multiMatchHandling: MultiMatchHandling.Exception);
+								{
+									var tagstr = message.Content.Substring(1);
+									// first, check for any global tags.
+									var globalTags = config.Tags.Values.SelectMany(x => x.Where(y => y.Key.Contains(tagstr) && y.IsGlobal));
+									if (globalTags.Any())
+									{
+										// only one. get it
+										if (globalTags.Count() == 1)
+										{
+											var tag = globalTags.First();
+											result = await _commands.ExecuteAsync(context, $"tag -g {tag.OwnerId} {tag.Key}", multiMatchHandling: MultiMatchHandling.Exception);
+											if (result.IsSuccess) return;
+										}
+										else // multiple, log
+										{
+											// todo
+											result = await _commands.ExecuteAsync(context, $"tag -f tags::global", multiMatchHandling: MultiMatchHandling.Exception);
+											if (result.IsSuccess) return;
+										}
+									}
 
-								if (result.IsSuccess)
-									return;
+									result = await _commands.ExecuteAsync(context, $"tag -f {tagstr}", multiMatchHandling: MultiMatchHandling.Exception);
+								}
+
+								if (result.IsSuccess) return;
 							}
 							else
 							{
@@ -488,7 +540,7 @@ namespace tModloaderDiscordBot
 		}
 
 		// TODO make proper logging service
-		private static Task Log(LogMessage msg)
+		internal static Task Log(LogMessage msg)
 		{
 			Console.WriteLine(msg.ToString());
 			return Task.CompletedTask;

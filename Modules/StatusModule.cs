@@ -18,6 +18,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("remove")]
 		[Alias("delete", "-d")]
 		[HasPermission]
+		[Priority(1)]
 		public async Task RemoveAsync(params string[] args)
 		{
 			foreach (var noa in args)
@@ -53,6 +54,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("add")]
 		[Alias("-a")]
 		[HasPermission]
+		[Priority(1)]
 		public async Task AddAsync(string nameParam, string addrParam)
 		{
 			var msg = await ReplyAsync($"Validating address...");
@@ -96,6 +98,11 @@ namespace tModloaderDiscordBot.Modules
 				var sb = new StringBuilder();
 
 				var toCheck = toCheckParam.ToLowerInvariant();
+
+				//int padLenKey = Config.StatusAddresses.Select(x => x.Key).Aggregate("", (max, cur) => max.Length > cur.Length ? max : cur).Length;
+				//int padLenStatus = 25;
+				//int padLenAddr = Config.StatusAddresses.Select(x => x.Value).Aggregate("", (max, cur) => max.Length > cur.Length ? max : cur).Length;
+
 				if (toCheck.Length > 0)
 				{
 					// TODO levenhstein dist, closest guess
@@ -106,7 +113,17 @@ namespace tModloaderDiscordBot.Modules
 					}
 
 					var addr = Config.StatusAddresses[toCheck];
-					await msg.ModifyAsync(x => x.Content = $"{toCheck}: `{PingResultString(addr)}` ({addr})");
+					string pingResultString;
+					if (Config.IsStatusAdressCached(toCheck))
+					{
+						pingResultString = Config.StatusAddressesCache[toCheck];
+					}
+					else
+					{
+						pingResultString = PingResultString(addr);
+						Config.StatusAddressesCache.Add(toCheck, pingResultString);
+					}
+					await msg.ModifyAsync(x => x.Content = string.Format("{0} {1} {2}", (toCheck + ":"), ("`" + pingResultString + "`"), ("(" + addr + ")")));
 					return;
 				}
 
@@ -118,11 +135,19 @@ namespace tModloaderDiscordBot.Modules
 				}
 
 				foreach (var addr in Config.StatusAddresses)
-					sb.AppendLine($"{addr.Key}: `{PingResultString(addr.Value)}` ({addr.Value})");
-
-				//sb.AppendLine($"Discord: `{PingSuccessString("https://status.discordapp.com/")}`");
-				//sb.AppendLine($"Mod Browser: `{PingSuccessString("http://javid.ddns.net/tModLoader/")}`");
-				//sb.AppendLine($"Website: `{PingSuccessString("https://tmodloader.net/")}`");
+				{
+					string pingResultString;
+					if (Config.IsStatusAdressCached(addr.Key))
+					{
+						pingResultString = Config.StatusAddressesCache[addr.Key];
+					}
+					else
+					{
+						pingResultString = PingResultString(addr.Value);
+						Config.StatusAddressesCache.Add(addr.Key, pingResultString);
+					}
+					sb.AppendLine(string.Format("{0} {1} {2}", (addr.Key + ":"), ("`" + pingResultString + "`"), ("(" + addr.Value + ")")));
+				}
 
 				await msg.ModifyAsync(x => x.Content = sb.ToString());
 			}
@@ -134,13 +159,13 @@ namespace tModloaderDiscordBot.Modules
 			}
 		}
 
-		private static bool IsUriLegit(string addr, out Uri uri)
+		internal static bool IsUriLegit(string addr, out Uri uri)
 		{
 			return Uri.TryCreate(addr, UriKind.Absolute, out uri)
 				&& (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
 		}
 
-		private static void CheckUriPrefix(ref string addr)
+		internal static void CheckUriPrefix(ref string addr)
 		{
 			if (addr.StartsWith("www."))
 				addr = addr.Substring(3);
@@ -149,14 +174,14 @@ namespace tModloaderDiscordBot.Modules
 				addr = $"http://{addr}";
 		}
 
-		private static bool Ping(string addr)
+		internal static bool Ping(string addr)
 		{
 			var request = WebRequest.Create(addr);
 			var response = (HttpWebResponse)request.GetResponse();
 			return response != null && response.StatusCode == HttpStatusCode.OK;
 		}
 
-		private static string PingResultString(string addr)
+		internal static string PingResultString(string addr)
 		{
 			var result = IsUriLegit(addr, out var _);
 

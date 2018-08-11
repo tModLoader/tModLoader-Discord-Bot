@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using tModloaderDiscordBot.Configs;
+using tModloaderDiscordBot.Preconditions;
 
 namespace tModloaderDiscordBot.Modules
 {
@@ -26,33 +28,43 @@ namespace tModloaderDiscordBot.Modules
 			return false;
 		}
 
-		private void AppendTags(StringBuilder sb, IEnumerable<KeyValTag> tags, int page)
+		private void AppendTags(StringBuilder sb, IEnumerable<KeyValTag> tags, int page, int numPages)
 		{
-			sb.AppendLine($"Tags found -- Page {page} -- (Showing up to 10)");
+			sb.AppendLine($"Tags found -- Page {page}/{numPages} -- (Showing up to 10 per page)");
 			foreach (var t in tags)
-				sb.AppendLine($"{Context.Guild.GetUser(t.OwnerId).FullName()}: {t.Key} `.tag -g {t.OwnerId} {t.Key}`");
+				sb.AppendLine($"{Context.Guild.GetUser(t.OwnerId).FullName()}: {t.Key} `.tag -g {t.OwnerId} {t.Key}`{(t.IsGlobal ? " (g)" : "")}");
 		}
 
-		private void Paginate(int max, ref int page, ref IEnumerable<KeyValTag> tags)
+		private void Paginate(int max, ref int page, ref IEnumerable<KeyValTag> tags, ref int totalPages)
 		{
-			var maxPages = (int)Math.Ceiling((float)max / 10f);
+			totalPages = (int)Math.Ceiling((float)max / 10f);
+
 			if (page < 1)
 				page = 1;
-			else if (page > maxPages)
-				page = maxPages;
+			else if (page > totalPages)
+				page = totalPages;
 
 			tags = tags.Skip(10 * page - 10).Take(10);
 		}
 
 		private async Task<IEnumerable<KeyValTag>> TryFindOtherTags(string key, bool findValueMatches = false, int pageParameter = 1)
 		{
-			var tags =
-				findValueMatches
-				? Config.Tags.SelectMany(x => x.Value.Where(y => y.Key.Contains(key) || y.Value.Contains(key)))
-				: Config.Tags.SelectMany(x => x.Value.Where(y => y.Key.EqualsIgnoreCase(key)));
+			IEnumerable<KeyValTag> tags;
+			if (key.EqualsIgnoreCase("tags::global"))
+			{
+				tags = Config.Tags.SelectMany(x => x.Value.Where(y => y.IsGlobal));
+			}
+			else
+			{
+				tags =
+					findValueMatches
+						? Config.Tags.SelectMany(x => x.Value.Where(y => y.Key.Contains(key) || y.Value.Contains(key)))
+						: Config.Tags.SelectMany(x => x.Value.Where(y => y.Key.EqualsIgnoreCase(key)));
+			}
 
 			var page = pageParameter;
-			Paginate(tags.Count(), ref page, ref tags);
+			int totalPages = 0;
+			Paginate(tags.Count(), ref page, ref tags, ref totalPages);
 
 			if (!tags.Any())
 			{
@@ -61,7 +73,7 @@ namespace tModloaderDiscordBot.Modules
 			}
 
 			var sb = new StringBuilder();
-			AppendTags(sb, tags, page);
+			AppendTags(sb, tags, page, totalPages);
 
 			await ReplyAsync(sb.ToString());
 			return tags;
@@ -91,6 +103,7 @@ namespace tModloaderDiscordBot.Modules
 			}
 
 			var tag = Config.Tags[id].FirstOrDefault(x => x.Key.EqualsIgnoreCase(key));
+
 			if (tag != null)
 			{
 				if (!Config.Permissions.IsAdmin(Context.User.Id) && !tag.IsEditor(Context.User.Id))
@@ -106,9 +119,29 @@ namespace tModloaderDiscordBot.Modules
 			}
 		}
 
+		[Command("list")]
+		[Alias("-l")]
+		public async Task ListAsync(int page = 1)
+		{
+			if (!Config.Tags.Any())
+			{
+				await ReplyAsync($"No tags found.");
+				return;
+			}
+
+			var tags = Config.Tags.SelectMany(x => x.Value);
+			int totalPages = 0;
+			Paginate(tags.Count(), ref page, ref tags, ref totalPages);
+
+			var sb = new StringBuilder();
+			AppendTags(sb, tags, page, totalPages);
+
+			await ReplyAsync(sb.ToString());
+		}
+
 		[Command("find")]
 		[Alias("-f")]
-		public async Task FindAsync(IGuildUser user, string key, int page = 1)
+		public async Task FindAsync(IGuildUser user, string key = "", int page = 1)
 		{
 			if (!Config.HasTags(user.Id))
 			{
@@ -116,11 +149,25 @@ namespace tModloaderDiscordBot.Modules
 				return;
 			}
 
-			var tags = key.Length > 0 ? Config.Tags[user.Id].Where(x => x.Key.Contains(key)) : Config.Tags[user.Id];
-			Paginate(tags.Count(), ref page, ref tags);
+			// check if given key was given page...
+			bool hasKey = key.Length > 0;
+			IEnumerable<KeyValTag> tags = Config.Tags[user.Id];
+			if (hasKey)
+			{
+				if (int.TryParse(key, out int keyNum))
+				{
+					page = keyNum;
+				}
+				else
+				{
+					tags = Config.Tags[user.Id].Where(x => x.Key.Contains(key));
+				}
+			}
+			int totalPages = 0;
+			Paginate(tags.Count(), ref page, ref tags, ref totalPages);
 
 			var sb = new StringBuilder();
-			AppendTags(sb, tags, page);
+			AppendTags(sb, tags, page, totalPages);
 
 			await ReplyAsync(sb.ToString());
 		}
@@ -270,9 +317,41 @@ namespace tModloaderDiscordBot.Modules
 			}
 
 			var tag = Config.Tags[id].FirstOrDefault(x => x.Key.EqualsIgnoreCase(key));
+
 			if (tag != null)
 				await ReplyAsync($"{Format.Bold($"Tag: {tag.Key} (Owner: {Context.Guild.GetUser(tag.OwnerId).FullName()}")})" +
 								 $"\n{tag.Value}");
+		}
+
+		[Command("global")]
+		[HasPermission]
+		public async Task GlobalAsync(string key, bool toggle)
+			=> await GlobalAsync(Context.User.Id, key, toggle);
+
+		[Command("global")]
+		[HasPermission]
+		public async Task GlobalAsync(IGuildUser user, string key, bool toggle)
+			=> await GlobalAsync(user.Id, key, toggle);
+
+		private async Task GlobalAsync(ulong id, string key, bool toggle)
+		{
+			if (!await CheckKeyValidity(key))
+				return;
+
+			if (!Config.HasTagKey(id, key))
+			{
+				await TryFindOtherTags(key);
+				return;
+			}
+
+			var tag = Config.Tags[id].FirstOrDefault(x => x.Key.EqualsIgnoreCase(key));
+
+			if (tag != null)
+			{
+				tag.IsGlobal = toggle;
+				await Config.Update();
+				await ReplyAsync($"Tag `{key}` owned by {id} is {(toggle ? "now global" : "no longer global")}.");
+			}
 		}
 
 		[Command("add")]
@@ -283,7 +362,7 @@ namespace tModloaderDiscordBot.Modules
 				return;
 
 			if (!Config.HasTags(Context.User.Id))
-				Config.Tags.Add(Context.User.Id, new HashSet<KeyValTag>());
+				Config.Tags.Add(Context.User.Id, new List<KeyValTag>());
 			else if (Config.HasTagKey(Context.User.Id, key))
 			{
 				await ReplyAsync($"You already own a tag named `{key}`");
@@ -315,7 +394,10 @@ namespace tModloaderDiscordBot.Modules
 			}
 
 			var tag = Config.Tags[Context.User.Id].FirstOrDefault(x => x.Key.EqualsIgnoreCase(key));
-			var deleted = Config.Tags[Context.User.Id].Remove(tag);
+			//await ReplyAsync(tag.GetHashCode() + "\n" + Config.Tags[Context.User.Id].First().GetHashCode() + "\n" + tag.Equals(Config.Tags[Context.User.Id].First()));
+
+			bool deleted = Config.Tags[Context.User.Id].Remove(tag);
+
 			if (deleted)
 				await Config.Update();
 			await ReplyAsync(

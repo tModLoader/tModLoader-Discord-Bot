@@ -10,6 +10,7 @@ namespace tModloaderDiscordBot.Configs
 		public string Key;
 		public string Value;
 		public ulong LastEditor;
+		public bool IsGlobal;
 
 		public bool IsOwner(ulong id)
 			=> OwnerId == id;
@@ -31,6 +32,7 @@ namespace tModloaderDiscordBot.Configs
 			clone.Key = Key;
 			clone.Value = Value;
 			clone.LastEditor = LastEditor;
+			clone.IsGlobal = IsGlobal;
 			return clone;
 		}
 
@@ -42,7 +44,8 @@ namespace tModloaderDiscordBot.Configs
 				   && Equals(Editors, other.Editors)
 				   && string.Equals(Key, other.Key)
 				   && string.Equals(Value, other.Value)
-				   && LastEditor == other.LastEditor;
+				   && LastEditor == other.LastEditor
+				   && IsGlobal == other.IsGlobal;
 		}
 
 		public override bool Equals(object obj)
@@ -54,15 +57,14 @@ namespace tModloaderDiscordBot.Configs
 
 		public override int GetHashCode()
 		{
-			unchecked
-			{
-				var hashCode = OwnerId.GetHashCode();
-				hashCode = (hashCode * 397) ^ (Editors != null ? Editors.GetHashCode() : 0);
-				hashCode = (hashCode * 397) ^ (Key != null ? Key.GetHashCode() : 0);
-				hashCode = (hashCode * 397) ^ (Value != null ? Value.GetHashCode() : 0);
-				hashCode = (hashCode * 397) ^ (LastEditor.GetHashCode());
-				return hashCode;
-			}
+			var hashCode = -1363886798;
+			hashCode = hashCode * -1521134295 + OwnerId.GetHashCode();
+			hashCode = hashCode * -1521134295 + EqualityComparer<ISet<ulong>>.Default.GetHashCode(Editors);
+			hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Key);
+			hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Value);
+			hashCode = hashCode * -1521134295 + LastEditor.GetHashCode();
+			hashCode = hashCode * -1521134295 + IsGlobal.GetHashCode();
+			return hashCode;
 		}
 
 		public static bool operator ==(KeyValTag lhs, KeyValTag rhs)
