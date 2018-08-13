@@ -123,16 +123,13 @@ namespace tModloaderDiscordBot.Services
 
 		public async Task UpdateAsync()
 		{
-			await Task.Run(async () =>
+			foreach (var config in _configService.GetAllConfigs())
 			{
-				foreach (var config in _configService.GetAllConfigs())
-				{
-					await UpdateForConfig(config);
-				}
-			});
+				await UpdateForConfig(config);
+			}
 		}
 
-		public async Task UpdateForConfig(GuildConfig config)
+		public Task UpdateForConfig(GuildConfig config)
 		{
 			void AddOne(SiteStatus siteStatus)
 			{
@@ -145,42 +142,42 @@ namespace tModloaderDiscordBot.Services
 				_siteStatuses[config.GuildId].Remove(siteStatus);
 			}
 
-			await Task.Run(() =>
+			if (_siteStatuses.ContainsKey(config.GuildId))
 			{
-				if (_siteStatuses.ContainsKey(config.GuildId))
+				var adds = config.SiteStatuses.Except(_siteStatuses.SelectMany(x => x.Value)).ToList();
+				foreach (var siteStatus in adds)
 				{
-					foreach (var siteStatus in config.SiteStatuses.Except(_siteStatuses.SelectMany(x => x.Value)))
-					{
-						AddOne(siteStatus);
-					}
+					AddOne(siteStatus);
+				}
 
-					foreach (var siteStatus in _siteStatuses.SelectMany(x => x.Value).Except(config.SiteStatuses))
-					{
-						RemoveOne(siteStatus);
-					}
-				}
-				else
+				var removes = _siteStatuses.SelectMany(x => x.Value).Except(config.SiteStatuses).ToList();
+				foreach (var siteStatus in removes)
 				{
-					_siteStatuses.Add(config.GuildId, new List<SiteStatus>());
-					foreach (var siteStatus in config.SiteStatuses)
-					{
-						AddOne(siteStatus);
-					}
+					RemoveOne(siteStatus);
 				}
-			});
+			}
+			else
+			{
+				_siteStatuses.Add(config.GuildId, new List<SiteStatus>());
+				foreach (var siteStatus in config.SiteStatuses)
+				{
+					AddOne(siteStatus);
+				}
+			}
+
+			return Task.CompletedTask;
 		}
 
-		public async Task RevalidateForGuild(ulong id)
+		public Task RevalidateForGuild(ulong id)
 		{
-			await Task.Run(() =>
-			{
-				if (!_siteStatuses.ContainsKey(id)) return;
+			if (!_siteStatuses.ContainsKey(id)) return Task.CompletedTask;
 
-				foreach (var status in _siteStatuses[id])
-				{
-					status.Revalidate();
-				}
-			});
+			foreach (var status in _siteStatuses[id])
+			{
+				status.Revalidate();
+			}
+
+			return Task.CompletedTask;
 		}
 	}
 }
