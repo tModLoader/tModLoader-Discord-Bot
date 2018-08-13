@@ -7,7 +7,7 @@ using tModloaderDiscordBot.Services;
 namespace tModloaderDiscordBot.Modules
 {
 	[Name("default")]
-	public class BaseModule : BotModuleBase
+	public class DefaultModule : BotModuleBase
 	{
 		//public BaseModule(CommandService commandService, GuildConfigService guildConfigService) : base(commandService, guildConfigService)
 		//{

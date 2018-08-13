@@ -11,14 +11,14 @@ using tModloaderDiscordBot.Services;
 namespace tModloaderDiscordBot.Modules
 {
 	[Group("status")]
-	public class StatusModule : BotModuleBase
+	public class StatusModule : ConfigModuleBase
 	{
 		public SiteStatusService StatusService { get; set; }
 
 		protected override void BeforeExecute(CommandInfo command)
 		{
 			base.BeforeExecute(command);
-			StatusService.SetGID(Context.Guild.Id);
+			StatusService.Initialize(Context.Guild.Id);
 		}
 
 		[Command("remove")]
@@ -37,7 +37,6 @@ namespace tModloaderDiscordBot.Modules
 				{
 					Config.SiteStatuses.Remove(Config.SiteStatuses.First(x => x.Name.EqualsIgnoreCase(name)));
 					await Config.Update(GuildConfigService);
-					await StatusService.UpdateForConfig(Config);
 					await msg.ModifyAsync(x => x.Content = $"Address for `{name}` was removed.");
 					continue;
 				}
@@ -48,7 +47,6 @@ namespace tModloaderDiscordBot.Modules
 				{
 					Config.SiteStatuses = Config.SiteStatuses.Where(x => !x.Name.EqualsIgnoreCase(address)).ToList();
 					await Config.Update(GuildConfigService);
-					await StatusService.UpdateForConfig(Config);
 					await msg.ModifyAsync(x => x.Content = $"Address `{address}` was removed.");
 					continue;
 				}

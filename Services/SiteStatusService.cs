@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using tModloaderDiscordBot.Configs;
 
@@ -77,44 +76,31 @@ namespace tModloaderDiscordBot.Services
 		}
 	}
 
-	public class SiteStatusService
+	public class SiteStatusService : BaseConfigService
 	{
-		private readonly IDictionary<ulong, IList<SiteStatus>> _siteStatuses;
-		private readonly GuildConfigService _configService;
-		private ulong _gid;
-
-		// ReSharper disable once InconsistentNaming
-		public void SetGID(ulong gid)
-		{
-			_gid = gid;
-		}
-
-		public bool HasName(string name) => _siteStatuses[_gid].Any(x => x.Name.EqualsIgnoreCase(name));
-		public bool HasAddress(string addr) => _siteStatuses[_gid].Any(x => x.Address.EqualsIgnoreCase(addr));
+		public bool HasName(string name) => _guildConfig.SiteStatuses.Any(x => x.Name.EqualsIgnoreCase(name));
+		public bool HasAddress(string addr) => _guildConfig.SiteStatuses.Any(x => x.Address.EqualsIgnoreCase(addr));
 
 		public IEnumerable<SiteStatus> AllSiteStatuses()
 		{
-			for (int i = 0; i < _siteStatuses[_gid].Count; i++)
+			for (int i = 0; i < _guildConfig.SiteStatuses.Count; i++)
 			{
-				yield return _siteStatuses[_gid][i];
+				yield return _guildConfig.SiteStatuses[i];
 			}
 		}
 
 		public (string cachedResult, string url) GetCachedResult(string key)
 		{
-			var status = _siteStatuses[_gid].FirstOrDefault(x => x.Name.EqualsIgnoreCase(key));
-			if (status == null) return (null, null);
-			return (status.CachedResult, status.Address);
+			var status = _guildConfig.SiteStatuses.FirstOrDefault(x => x.Name.EqualsIgnoreCase(key));
+			return status == null ? (null, null) : (status.CachedResult, status.Address);
 		}
 
-		public SiteStatusService(IServiceProvider services)
+		public SiteStatusService(IServiceProvider services) : base(services)
 		{
-			_configService = services.GetRequiredService<GuildConfigService>();
-			_siteStatuses = new Dictionary<ulong, IList<SiteStatus>>();
 
 			var _updateCacheTimer = new Timer((e) =>
 			{
-				foreach (var status in _siteStatuses.SelectMany(x => x.Value))
+				foreach (var status in _guildConfig.SiteStatuses)
 				{
 					status.Revalidate();
 				}
@@ -123,7 +109,7 @@ namespace tModloaderDiscordBot.Services
 
 		public async Task UpdateAsync()
 		{
-			foreach (var config in _configService.GetAllConfigs())
+			foreach (var config in _guildConfigService.GetAllConfigs())
 			{
 				await UpdateForConfig(config);
 			}
@@ -131,52 +117,11 @@ namespace tModloaderDiscordBot.Services
 
 		public Task UpdateForConfig(GuildConfig config)
 		{
-			void AddOne(SiteStatus siteStatus)
+			var needsValidation = config.SiteStatuses.Where(x => x.StatusCode == SiteStatusCode.Unknown);
+			foreach (var siteStatus in needsValidation)
 			{
 				siteStatus.Revalidate();
-				_siteStatuses[config.GuildId].Add(siteStatus);
 			}
-
-			void RemoveOne(SiteStatus siteStatus)
-			{
-				_siteStatuses[config.GuildId].Remove(siteStatus);
-			}
-
-			if (_siteStatuses.ContainsKey(config.GuildId))
-			{
-				var adds = config.SiteStatuses.Except(_siteStatuses.SelectMany(x => x.Value)).ToList();
-				foreach (var siteStatus in adds)
-				{
-					AddOne(siteStatus);
-				}
-
-				var removes = _siteStatuses.SelectMany(x => x.Value).Except(config.SiteStatuses).ToList();
-				foreach (var siteStatus in removes)
-				{
-					RemoveOne(siteStatus);
-				}
-			}
-			else
-			{
-				_siteStatuses.Add(config.GuildId, new List<SiteStatus>());
-				foreach (var siteStatus in config.SiteStatuses)
-				{
-					AddOne(siteStatus);
-				}
-			}
-
-			return Task.CompletedTask;
-		}
-
-		public Task RevalidateForGuild(ulong id)
-		{
-			if (!_siteStatuses.ContainsKey(id)) return Task.CompletedTask;
-
-			foreach (var status in _siteStatuses[id])
-			{
-				status.Revalidate();
-			}
-
 			return Task.CompletedTask;
 		}
 	}

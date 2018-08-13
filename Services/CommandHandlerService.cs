@@ -22,6 +22,11 @@ namespace tModloaderDiscordBot.Services
 			_client.MessageReceived += HandleCommand;
 		}
 
+		~CommandHandlerService()
+		{
+			_client.MessageReceived -= HandleCommand;
+		}
+
 		public async Task InitializeAsync()
 		{
 			await _commandService.AddModulesAsync(Assembly.GetEntryAssembly());

@@ -31,7 +31,8 @@ namespace tModloaderDiscordBot
 					.AddSingleton(new ResourceManager("tModloaderDiscordBot.Properties.Resources", GetType().Assembly))
 					.AddSingleton<LoggingService>()
 					.AddSingleton<GuildConfigService>()
-					.AddSingleton<SiteStatusService>();
+					.AddSingleton<SiteStatusService>()
+					.AddSingleton<GuildTagService>();
 			}
 
 			_client = new DiscordSocketClient(new DiscordSocketConfig
