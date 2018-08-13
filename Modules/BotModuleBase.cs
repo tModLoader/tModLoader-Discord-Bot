@@ -26,7 +26,7 @@ namespace tModloaderDiscordBot.Modules
 			if (GuildConfigService == null)
 				throw new Exception("Failed to get guild config service");
 
-			Config = GuildConfigService.GetGuildConfig(Context.Guild.Id);
+			Config = GuildConfigService.GetConfig(Context.Guild.Id);
 			if (Config == null)
 				throw new Exception("Failed to get guild config");
 		}

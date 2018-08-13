@@ -30,7 +30,8 @@ namespace tModloaderDiscordBot
 					.AddSingleton<CommandHandlerService>()
 					.AddSingleton(new ResourceManager("tModloaderDiscordBot.Properties.Resources", GetType().Assembly))
 					.AddSingleton<LoggingService>()
-					.AddSingleton<GuildConfigService>();
+					.AddSingleton<GuildConfigService>()
+					.AddSingleton<SiteStatusService>();
 			}
 
 			_client = new DiscordSocketClient(new DiscordSocketConfig
@@ -89,6 +90,7 @@ namespace tModloaderDiscordBot
 			BotOwner = (await _client.GetApplicationInfoAsync()).Owner;
 
 			await _services.GetRequiredService<GuildConfigService>().SetupAsync();
+			await _services.GetRequiredService<SiteStatusService>().UpdateAsync();
 
 			await _loggingService.Log(new LogMessage(LogSeverity.Info, "ClientReady", "Done."));
 			await _client.SetGameAsync("Bot has started");
