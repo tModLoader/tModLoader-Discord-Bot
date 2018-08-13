@@ -28,6 +28,7 @@ namespace tModloaderDiscordBot.Preconditions
 			if (!commandFound)
 				return PreconditionResult.FromError("Command not found");
 
+			// todo future code goes here...
 			bool hasPerm = false;
 			if (!hasPerm)
 				return PreconditionResult.FromError($"No permissions setup for the command `{cmd}` but required to use it.");

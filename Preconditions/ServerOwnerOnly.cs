@@ -6,15 +6,15 @@ namespace tModloaderDiscordBot.Preconditions
 {
 	internal class ServerOwnerOnly : PreconditionAttribute
 	{
-		public override async Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
+		public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
 		{
-			return await Task.Run(() =>
-			{
-				if (context.Guild == null || context.User == null)
-					return PreconditionResult.FromError("");
+			if (context.Guild == null || context.User == null)
+				return Task.FromResult(PreconditionResult.FromError(""));
 
-				return context.Guild.OwnerId == context.User.Id ? PreconditionResult.FromSuccess() : PreconditionResult.FromError("User is not owner of guild");
-			});
+			if (context.Guild.OwnerId != context.User.Id)
+				return Task.FromResult(PreconditionResult.FromError("User is not owner of guild"));
+
+			return Task.FromResult(PreconditionResult.FromSuccess());
 		}
 	}
 }
