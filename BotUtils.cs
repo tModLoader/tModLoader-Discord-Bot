@@ -21,8 +21,6 @@ namespace tModloaderDiscordBot
 			return isDefault;
 		}
 
-		// TODO refactor filewrits, mostly the same code
-
 		public static async Task<string> FileReadToEndAsync(SemaphoreSlim semaphore, string filePath)
 		{
 			string buffer;
@@ -173,12 +171,6 @@ namespace tModloaderDiscordBot
 
 		public static bool Contains(this string source, string toCheck, StringComparison comp) =>
 			source.IndexOf(toCheck, comp) >= 0;
-
-		public static ConcurrentSet<T> ToConcurrentSet<T>(this IEnumerable<KeyValuePair<T, byte>> source)
-			=> new ConcurrentSet<T>(source);
-
-		public static ConcurrentSet<T> ToConcurrentSet<T>(this IEnumerable<T> source)
-			=> new ConcurrentSet<T>(source);
 
 		//public static ConcurrentBag<T> ToConcurrentBag<T>(this IEnumerable<T> source)
 		//	=> new ConcurrentBag<T>(source);

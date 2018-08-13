@@ -4,14 +4,17 @@ using Discord.Commands;
 
 namespace tModloaderDiscordBot.Preconditions
 {
-    internal class ServerOwnerOnly : PreconditionAttribute
-    {
-	    public override async Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
-	    {
-		    if (context.Guild == null || context.User == null)
-			    return PreconditionResult.FromError("");
+	internal class ServerOwnerOnly : PreconditionAttribute
+	{
+		public override async Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
+		{
+			return await Task.Run(() =>
+			{
+				if (context.Guild == null || context.User == null)
+					return PreconditionResult.FromError("");
 
-			return context.Guild.OwnerId == context.User.Id ? PreconditionResult.FromSuccess() : PreconditionResult.FromError("User is not owner of guild");
-	    }
-    }
+				return context.Guild.OwnerId == context.User.Id ? PreconditionResult.FromSuccess() : PreconditionResult.FromError("User is not owner of guild");
+			});
+		}
+	}
 }
