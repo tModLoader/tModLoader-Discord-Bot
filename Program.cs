@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -11,6 +12,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using tModloaderDiscordBot.Configs;
+using tModloaderDiscordBot.Modules;
 
 namespace tModloaderDiscordBot
 {
@@ -40,7 +42,7 @@ namespace tModloaderDiscordBot
 
 			_client = new DiscordSocketClient(new DiscordSocketConfig
 			{
-				AlwaysDownloadUsers = true
+				AlwaysDownloadUsers = true,
 			});
 			_commands = new CommandService(new CommandServiceConfig
 			{
@@ -59,6 +61,7 @@ namespace tModloaderDiscordBot
 			_client.UserLeft += UserLeft;
 			_client.UserJoined += UserJoined;
 			_client.ReactionAdded += ReactionAdded;
+			_client.ReactionRemoved += ReactionAdded;
 			_client.LatencyUpdated += ClientLatencyUpdated;
 			//_client.Connected += ClientConnected;
 
@@ -103,29 +106,83 @@ namespace tModloaderDiscordBot
 				await msg.RemoveReactionAsync(reaction.Emote, reaction.User.Value, new RequestOptions { AuditLogReason = $"User is rate limited until {RateLimitedUsers[reaction.User.Value.Id].ToString()}" });
 			}
 			// vote deletion here
-			else if (channelParam is SocketTextChannel channel
-					 && reaction.Emote.Name == "⛔")
+			else if (channelParam is SocketTextChannel channel)
 			{
 				GuildConfig config;
 				if ((config = ConfigManager.GetManagedConfig(channel.Guild.Id)) == null)
 					return;
 
-				var msg = await cacheable.DownloadAsync();
-				if (config.IsVoteDeleteImmune(msg.Author.Id)
-					|| msg.Author is SocketGuildUser gu && gu.Roles.Any(x => config.IsVoteDeleteImmune(x.Id)))
-					return;
+				if (reaction.Emote.Name == "⛔")
+				{
+					var msg = await cacheable.DownloadAsync();
+					if (config.IsVoteDeleteImmune(msg.Author.Id)
+						|| msg.Author is SocketGuildUser gu && gu.Roles.Any(x => config.IsVoteDeleteImmune(x.Id)))
+						return;
 
-				// get the emote, count the total reactions, and get those users
-				var emote = msg.Reactions.FirstOrDefault(x => x.Key.Name.Equals("⛔"));
-				var count = emote.Value.ReactionCount;
-				var users = (await msg.GetReactionUsersAsync(emote.Key, limit: count))
-					.Select(x => channel.Guild.GetUser(x.Id))
-					.Where(x => x != null)
-					.Cast<IGuildUser>();
+					// get the emote, count the total reactions, and get those users
+					var emote = msg.Reactions.FirstOrDefault(x => x.Key.Name.Equals("⛔"));
+					var count = emote.Value.ReactionCount;
+					var users = (await msg.GetReactionUsersAsync(emote.Key, limit: count))
+						.Select(x => channel.Guild.GetUser(x.Id))
+						.Where(x => x != null)
+						.Cast<IGuildUser>();
 
-				// if we match the requirements for vote removal, proceed
-				if (config.MatchesVoteDeleteRequirements(users.ToArray()))
-					await msg.DeleteAsync(new RequestOptions { AuditLogReason = "Message was voted to be deleted." });
+					// if we match the requirements for vote removal, proceed
+					if (config.MatchesVoteDeleteRequirements(users.ToArray()))
+						await msg.DeleteAsync(new RequestOptions { AuditLogReason = "Message was voted to be deleted." });
+				}
+				else
+				{
+					// tag list controlling by emoji
+					var msg = await cacheable.DownloadAsync();
+					var cachedTagList = config.TagListCache.FirstOrDefault(x => x.message.Id == msg.Id);
+
+					// valid reactor
+					if (cachedTagList != null && cachedTagList.originalMessage.Author.Id == reaction.UserId && reaction.UserId != _client.CurrentUser.Id)
+					{
+						// print a selected tag 0..9
+						if (TagModule._tagsNumberStrings.Values.Contains(reaction.Emote.Name))
+						{
+							var tags = cachedTagList.containedTags;
+							int index = TagModule._tagsNumberStrings.Select(x => x.Value).ToList().IndexOf(reaction.Emote.Name);
+							KeyValTag theTag = tags[index + 10 * (cachedTagList.currentPage - 1)];
+							await channel.SendMessageAsync(TagModule.WriteTag(theTag, channel.Guild.GetUser(theTag.OwnerId).FullName()));
+							await msg.DeleteAsync();
+							await cachedTagList.originalMessage.DeleteAsync();
+							config.TagListCache.Remove(cachedTagList);
+						}
+						// paginate
+						else if (reaction.Emote.Name.Equals("\u25c0") || reaction.Emote.Name.Equals("\u25b6"))
+						{
+							var tags = cachedTagList.containedTags.AsEnumerable();
+							int totalPages = (int)Math.Ceiling((float)tags.Count() / 10f);
+							int page;
+							bool flag;
+							if (reaction.Emote.Name.Equals("\u25c0"))
+							{
+								page = cachedTagList.currentPage - 1;
+								flag = page >= 1;
+							}
+							else
+							{
+								page = cachedTagList.currentPage + 1;
+								flag = page <= totalPages;
+							}
+
+							if (flag)
+							{
+								TagModule.Paginate(tags.Count(), ref page, ref tags, ref totalPages);
+
+								var sb = new StringBuilder();
+								TagModule.AppendTags(sb, tags, page, totalPages, channel.Guild);
+
+								await msg.ModifyAsync(x => x.Content = sb.ToString());
+								cachedTagList.currentPage = page;
+								cachedTagList.RefreshExpiry();
+							}
+						}
+					}
+				}
 			}
 		}
 
@@ -230,48 +287,59 @@ namespace tModloaderDiscordBot
 			await Log(new LogMessage(LogSeverity.Info, "ClientReady", "Setting update timer"));
 			var timer = new Timer(async o =>
 				{
-					await Task.Run(async () =>
+					await Log(new LogMessage(LogSeverity.Critical, "SystemMain", "Starting maintenance"));
+					var now = DateTimeOffset.UtcNow;
+
+					Cooldowns = Cooldowns
+						.Where(x => now < x.Value)
+						.ToDictionary(x => x.Key, x => x.Value);
+
+					RateLimitedUsers = RateLimitedUsers
+						.Where(x => now < x.Value)
+						.ToDictionary(x => x.Key, x => x.Value);
+
+					try
 					{
-						await Log(new LogMessage(LogSeverity.Critical, "SystemMain", "Starting maintenance"));
-						var now = DateTimeOffset.UtcNow;
-
-						Cooldowns = Cooldowns
-							.Where(x => now < x.Value)
-							.ToDictionary(x => x.Key, x => x.Value);
-
-						RateLimitedUsers = RateLimitedUsers
-							.Where(x => now < x.Value)
-							.ToDictionary(x => x.Key, x => x.Value);
-
-						try
-						{
-							await ModsManager.Maintain(_client);
-						}
-						catch (Exception e)
-						{
-							await Log(new LogMessage(LogSeverity.Critical, "SystemMain", "", e));
-						}
-					});
+						await ModsManager.Maintain(_client);
+					}
+					catch (Exception e)
+					{
+						await Log(new LogMessage(LogSeverity.Critical, "SystemMain", "", e));
+					}
 				}, null,
-				TimeSpan.FromMinutes(1),
+				TimeSpan.FromMinutes(0),
 				TimeSpan.FromMinutes(1));
 
 			var timerStatusCache = new Timer(async o =>
 				{
-					await Task.Run(async () =>
+
+					await Log(new LogMessage(LogSeverity.Critical, "SystemMain", "Clearing status addresses cache"));
+					foreach (var clientGuild in _client.Guilds)
 					{
-						await Log(new LogMessage(LogSeverity.Critical, "SystemMain", "Clearing status addresses cache"));
-						foreach (var clientGuild in _client.Guilds)
+						if (ConfigManager.GetManagedConfig(clientGuild.Id) is GuildConfig config)
 						{
-							if (ConfigManager.GetManagedConfig(clientGuild.Id) is GuildConfig config)
-							{
-								config.StatusAddressesCache.Clear();
-							}
+							config.StatusAddressesCache.Clear();
 						}
-					});
+					}
 				}, null,
-				TimeSpan.FromMinutes(5),
+				TimeSpan.FromMinutes(0),
 				TimeSpan.FromMinutes(5));
+
+			var timerTagListsCache = new Timer(async o =>
+				{
+					await Log(new LogMessage(LogSeverity.Critical, "SystemMain", "Clearing tag lists cache"));
+					foreach (var clientGuild in _client.Guilds)
+					{
+						if (ConfigManager.GetManagedConfig(clientGuild.Id) is GuildConfig config)
+						{
+							var now = DateTimeOffset.UtcNow;
+							config.TagListCache.Where(x => x.expiryTime >= now);
+						}
+					}
+
+				}, null,
+				TimeSpan.FromMinutes(0),
+				TimeSpan.FromMinutes(2));
 
 			await Log(new LogMessage(LogSeverity.Info, "ClientReady", "Setting game"));
 			await _client.SetGameAsync($"tModLoader {ModsManager.tMLVersion}", type: ActivityType.Playing);
@@ -547,3 +615,6 @@ namespace tModloaderDiscordBot
 		}
 	}
 }
+
+
+

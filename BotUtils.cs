@@ -14,6 +14,13 @@ namespace tModloaderDiscordBot
 {
 	public static class BotUtils
 	{
+		public static bool IsDefault<T>(this T value) where T : struct
+		{
+			bool isDefault = value.Equals(default(T));
+
+			return isDefault;
+		}
+
 		// TODO refactor filewrits, mostly the same code
 
 		public static async Task<string> FileReadToEndAsync(SemaphoreSlim semaphore, string filePath)

@@ -7,6 +7,21 @@ using Newtonsoft.Json;
 
 namespace tModloaderDiscordBot.Configs
 {
+	public class CachedTagList
+	{
+		public IUserMessage originalMessage;
+		public IUserMessage message;
+		public IList<KeyValTag> containedTags;
+		public int currentPage;
+		public int maxPages;
+		public DateTimeOffset expiryTime;
+
+		public void RefreshExpiry()
+		{
+			expiryTime = DateTimeOffset.Now.AddMinutes(2);
+		}
+	}
+
 	public sealed class GuildConfig : ICloneable, IEquatable<GuildConfig>
 	{
 		public ulong GuildId;
@@ -19,9 +34,11 @@ namespace tModloaderDiscordBot.Configs
 		public ISet<ulong> VoteDeleteReqIds; // req ids (role/usr) for vote deletion
 		public IDictionary<ulong, uint> VoteDeleteWeights; // id -> vote weight (admin=3 etc.)
 		public uint VoteDeleteReqAmount;
+		[JsonIgnore] public IList<CachedTagList> TagListCache;
 
 		public PermissionsConfig Permissions;
 
+		// refactor this bullshit
 		public object Clone()
 		{
 			var clone = (GuildConfig)this.MemberwiseClone();
@@ -33,6 +50,7 @@ namespace tModloaderDiscordBot.Configs
 			clone.UserRateLimitCounts = UserRateLimitCounts != null ? new Dictionary<ulong, uint>(UserRateLimitCounts) : new Dictionary<ulong, uint>();
 			clone.VoteDeleteReqIds = VoteDeleteReqIds != null ? new HashSet<ulong>(VoteDeleteReqIds) : new HashSet<ulong>();
 			clone.VoteDeleteWeights = VoteDeleteWeights != null ? new Dictionary<ulong, uint>(VoteDeleteWeights) : new Dictionary<ulong, uint>();
+			clone.TagListCache = TagListCache != null ? new List<CachedTagList>(TagListCache) : new List<CachedTagList>(); 
 			//clone.VoteDeleteReqAmount = VoteDeleteReqAmount;
 
 			if (Permissions != null)
@@ -81,6 +99,9 @@ namespace tModloaderDiscordBot.Configs
 
 			if (VoteDeleteReqAmount == default(uint))
 				VoteDeleteReqAmount = 5;
+
+			if (TagListCache == null)
+				TagListCache = new List<CachedTagList>();
 
 			if (Permissions == null)
 				Permissions = new PermissionsConfig
@@ -200,7 +221,6 @@ namespace tModloaderDiscordBot.Configs
 				var hashCode = GuildId.GetHashCode();
 				hashCode = (hashCode * 397) ^ (StickyRoles != null ? StickyRoles.GetHashCode() : 0);
 				hashCode = (hashCode * 397) ^ (StatusAddresses != null ? StatusAddresses.GetHashCode() : 0);
-				hashCode = (hashCode * 397) ^ (StatusAddressesCache != null ? StatusAddressesCache.GetHashCode() : 0);
 				hashCode = (hashCode * 397) ^ (VoteDeleteImmune != null ? VoteDeleteImmune.GetHashCode() : 0);
 				hashCode = (hashCode * 397) ^ (Tags != null ? Tags.GetHashCode() : 0);
 				hashCode = (hashCode * 397) ^ (UserRateLimitCounts != null ? UserRateLimitCounts.GetHashCode() : 0);

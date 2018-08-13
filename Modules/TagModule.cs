@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using tModloaderDiscordBot.Configs;
 using tModloaderDiscordBot.Preconditions;
 
@@ -28,14 +29,18 @@ namespace tModloaderDiscordBot.Modules
 			return false;
 		}
 
-		private void AppendTags(StringBuilder sb, IEnumerable<KeyValTag> tags, int page, int numPages)
+		internal static void AppendTags(StringBuilder sb, IEnumerable<KeyValTag> tags, int page, int numPages, SocketGuild guild)
 		{
 			sb.AppendLine($"Tags found -- Page {page}/{numPages} -- (Showing up to 10 per page)");
-			foreach (var t in tags)
-				sb.AppendLine($"{Context.Guild.GetUser(t.OwnerId).FullName()}: {t.Key} `.tag -g {t.OwnerId} {t.Key}`{(t.IsGlobal ? " (g)" : "")}");
+
+			for (int i = 0; i < tags.Count(); i++)
+			{
+				var t = tags.ElementAt(i);
+				sb.AppendLine($"{i}) {guild.GetUser(t.OwnerId).FullName()}: {t.Key} `.tag -g {t.OwnerId} {t.Key}`{(t.IsGlobal ? " (g)" : "")}");
+			}
 		}
 
-		private void Paginate(int max, ref int page, ref IEnumerable<KeyValTag> tags, ref int totalPages)
+		internal static void Paginate(int max, ref int page, ref IEnumerable<KeyValTag> tags, ref int totalPages)
 		{
 			totalPages = (int)Math.Ceiling((float)max / 10f);
 
@@ -62,6 +67,7 @@ namespace tModloaderDiscordBot.Modules
 						: Config.Tags.SelectMany(x => x.Value.Where(y => y.Key.EqualsIgnoreCase(key)));
 			}
 
+			var allTags = new List<KeyValTag>(tags);
 			var page = pageParameter;
 			int totalPages = 0;
 			Paginate(tags.Count(), ref page, ref tags, ref totalPages);
@@ -73,9 +79,32 @@ namespace tModloaderDiscordBot.Modules
 			}
 
 			var sb = new StringBuilder();
-			AppendTags(sb, tags, page, totalPages);
+			AppendTags(sb, tags, page, totalPages, Context.Guild);
 
-			await ReplyAsync(sb.ToString());
+			var msg = await ReplyAsync(sb.ToString());
+
+			Config.TagListCache.Add(new CachedTagList
+			{
+				originalMessage = Context.Message,
+				containedTags = allTags,
+				currentPage = page,
+				maxPages = totalPages,
+				message = msg,
+				expiryTime = DateTimeOffset.Now.AddMinutes(2)
+			});
+
+			if (totalPages > 1)
+			{
+				await msg.AddReactionAsync(new Emoji("\u25c0"));
+				await msg.AddReactionAsync(new Emoji("\u25b6"));
+			}
+
+			int numTags = tags.Count();
+			for (int i = 0; i < numTags; i++)
+			{
+				await msg.AddReactionAsync(new Emoji(_tagsNumberStrings[i]));
+			}
+
 			return tags;
 		}
 
@@ -119,6 +148,20 @@ namespace tModloaderDiscordBot.Modules
 			}
 		}
 
+		internal static IDictionary<int, string> _tagsNumberStrings = new Dictionary<int, string>()
+		{
+			{ 0, "\u0030\u20e3" },
+			{ 1, "\u0031\u20e3" },
+			{ 2, "\u0032\u20e3" },
+			{ 3, "\u0033\u20e3" },
+			{ 4, "\u0034\u20e3" },
+			{ 5, "\u0035\u20e3" },
+			{ 6, "\u0036\u20e3" },
+			{ 7, "\u0037\u20e3" },
+			{ 8, "\u0038\u20e3" },
+			{ 9, "\u0039\u20e3" },
+		};
+
 		[Command("list")]
 		[Alias("-l")]
 		public async Task ListAsync(int page = 1)
@@ -130,13 +173,37 @@ namespace tModloaderDiscordBot.Modules
 			}
 
 			var tags = Config.Tags.SelectMany(x => x.Value);
+			var allTags = new List<KeyValTag>(tags);
 			int totalPages = 0;
 			Paginate(tags.Count(), ref page, ref tags, ref totalPages);
 
 			var sb = new StringBuilder();
-			AppendTags(sb, tags, page, totalPages);
+			AppendTags(sb, tags, page, totalPages, Context.Guild);
 
-			await ReplyAsync(sb.ToString());
+			var msg = await ReplyAsync(sb.ToString());
+
+			Config.TagListCache.Add(new CachedTagList
+			{
+				originalMessage = Context.Message,
+				containedTags = allTags,
+				currentPage = page,
+				maxPages = totalPages,
+				message = msg,
+				expiryTime = DateTimeOffset.Now.AddMinutes(2)
+			});
+
+			int numTags = tags.Count();
+
+			if (totalPages > 1)
+			{
+				await msg.AddReactionAsync(new Emoji("\u25c0"));
+				await msg.AddReactionAsync(new Emoji("\u25b6"));
+			}
+
+			for (int i = 0; i < numTags; i++)
+			{
+				await msg.AddReactionAsync(new Emoji(_tagsNumberStrings[i]));
+			}
 		}
 
 		[Command("find")]
@@ -167,7 +234,7 @@ namespace tModloaderDiscordBot.Modules
 			Paginate(tags.Count(), ref page, ref tags, ref totalPages);
 
 			var sb = new StringBuilder();
-			AppendTags(sb, tags, page, totalPages);
+			AppendTags(sb, tags, page, totalPages, Context.Guild);
 
 			await ReplyAsync(sb.ToString());
 		}
@@ -319,8 +386,15 @@ namespace tModloaderDiscordBot.Modules
 			var tag = Config.Tags[id].FirstOrDefault(x => x.Key.EqualsIgnoreCase(key));
 
 			if (tag != null)
-				await ReplyAsync($"{Format.Bold($"Tag: {tag.Key} (Owner: {Context.Guild.GetUser(tag.OwnerId).FullName()}")})" +
-								 $"\n{tag.Value}");
+				await ReplyAsync(WriteTag(tag, Context.Guild.GetUser(tag.OwnerId).FullName()));
+		}
+
+		internal static string WriteTag(KeyValTag tag, string ownerName)
+		{
+			StringBuilder sb = new StringBuilder();
+			sb.AppendLine(Format.Bold($"Tag: {tag.Key} (Owner: {ownerName})"));
+			sb.Append(tag.Value);
+			return sb.ToString();
 		}
 
 		[Command("global")]
