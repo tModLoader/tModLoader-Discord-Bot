@@ -1,18 +1,25 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord.WebSocket;
+using Newtonsoft.Json;
 using tModloaderDiscordBot.Services;
 using tModloaderDiscordBot.Tags;
 
-namespace tModloaderDiscordBot.Configs
+namespace tModloaderDiscordBot.Components
 {
 	public sealed class GuildConfig
 	{
 		public ulong GuildId;
 		public IList<SiteStatus> SiteStatuses = new List<SiteStatus>();
 		public IList<GuildTag> GuildTags = new List<GuildTag>();
+		public BotPermissions Permissions = new BotPermissions();
+
+		[JsonIgnore] private GuildConfigService _guildConfigService;
+
+		public void Initialize(GuildConfigService guildConfigService)
+		{
+			_guildConfigService = guildConfigService;
+		}
 
 		public GuildConfig(SocketGuild guild)
 		{
@@ -22,10 +29,13 @@ namespace tModloaderDiscordBot.Configs
 			}
 		}
 
-		public async Task Update(GuildConfigService service)
+		public async Task<bool> Update()
 		{
-			await service.UpdateCacheForConfig(this);
-			await service.WriteGuildConfig(this);
+			if (_guildConfigService == null) return false;
+
+			await _guildConfigService.UpdateCacheForConfig(this);
+			await _guildConfigService.WriteGuildConfig(this);
+			return true;
 		}
 	}
 }

@@ -24,7 +24,8 @@ namespace tModloaderDiscordBot
 		{
 			IServiceCollection BuildServiceCollection()
 			{
-				return new ServiceCollection()
+				var serviceCollection = 
+					new ServiceCollection()
 					.AddSingleton(_client)
 					.AddSingleton(_commandService)
 					.AddSingleton<CommandHandlerService>()
@@ -32,8 +33,24 @@ namespace tModloaderDiscordBot
 					.AddSingleton<LoggingService>()
 					.AddSingleton<GuildConfigService>()
 					.AddSingleton<SiteStatusService>()
-					.AddSingleton<GuildTagService>();
+					.AddSingleton<GuildTagService>()
+					.AddSingleton<PermissionService>();
+
+				//foreach (var type in AppDomain.CurrentDomain.GetAssemblies()
+				//	.SelectMany(x => x.GetTypes())
+				//	.Where(x => 
+				//		x.IsAssignableFrom(typeof(IBotService)) 
+				//		&& x.IsClass 
+				//		&& !x.IsAbstract))
+				//{
+				//	serviceCollection.AddSingleton(Activator.CreateInstance(type));
+				//}
+
+				return serviceCollection;
 			}
+
+			// How to use resources:
+			//_services.GetRequiredService<ResourceManager>().GetString("key")
 
 			_client = new DiscordSocketClient(new DiscordSocketConfig
 			{
@@ -57,7 +74,7 @@ namespace tModloaderDiscordBot
 			await Console.Out.WriteLineAsync($"https://discordapp.com/api/oauth2/authorize?client_id=&scope=bot");
 			await Console.Out.WriteLineAsync($"Start date: {DateTime.Now}");
 
-			await _client.LoginAsync(TokenType.Bot, _services.GetRequiredService<ResourceManager>().GetString("token"));
+			await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TmlBotToken"));
 			await _client.StartAsync();
 
 			await Task.Delay(-1);
@@ -98,8 +115,6 @@ namespace tModloaderDiscordBot
 			await ClientLatencyUpdated(_client.Latency, _client.Latency);
 			Ready = true;
 		}
-
-		// TODO make proper logging service
 
 	}
 }

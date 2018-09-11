@@ -1,16 +1,14 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 
-namespace tModloaderDiscordBot
+namespace tModloaderDiscordBot.Utils
 {
 	public static class BotUtils
 	{
@@ -19,90 +17,6 @@ namespace tModloaderDiscordBot
 			bool isDefault = value.Equals(default(T));
 
 			return isDefault;
-		}
-
-		public static async Task<string> FileReadToEndAsync(SemaphoreSlim semaphore, string filePath)
-		{
-			string buffer;
-
-			await semaphore.WaitAsync();
-
-			try
-			{
-				using (var stream = File.Open(filePath, FileMode.Open))
-				using (var reader = new StreamReader(stream))
-					buffer = await reader.ReadToEndAsync();
-			}
-			finally
-			{
-				semaphore.Release();
-			}
-
-			return buffer;
-		}
-
-		public static async Task FileWriteAsync(SemaphoreSlim semaphore, string path, string content)
-		{
-			await semaphore.WaitAsync();
-
-			try
-			{
-				using (var stream = File.Open(path, FileMode.Create))
-				using (var writer = new StreamWriter(stream))
-					await writer.WriteAsync(content);
-			}
-			finally
-			{
-				semaphore.Release();
-			}
-		}
-
-		public static async Task FileWriteLineAsync(SemaphoreSlim semaphore, string path, string content)
-		{
-			await semaphore.WaitAsync();
-
-			try
-			{
-				using (var stream = File.Open(path, FileMode.Create))
-				using (var writer = new StreamWriter(stream))
-					await writer.WriteLineAsync(content);
-			}
-			finally
-			{
-				semaphore.Release();
-			}
-		}
-
-		public static async Task FileAppendAsync(SemaphoreSlim semaphore, string path, string content)
-		{
-			await semaphore.WaitAsync();
-
-			try
-			{
-				using (var stream = File.Open(path, FileMode.Append))
-				using (var writer = new StreamWriter(stream))
-					await writer.WriteAsync(content);
-			}
-			finally
-			{
-				semaphore.Release();
-			}
-		}
-
-		public static async Task FileAppendLineAsync(SemaphoreSlim semaphore, string path, string content)
-		{
-			await semaphore.WaitAsync();
-
-			try
-			{
-				using (var stream = File.Open(path, FileMode.Append))
-				using (var writer = new StreamWriter(stream))
-					await writer.WriteLineAsync(content);
-			}
-			finally
-			{
-				semaphore.Release();
-			}
 		}
 
 		public static byte[] UnicodeGetBytes(this string content) =>
@@ -297,7 +211,7 @@ namespace tModloaderDiscordBot
 
 		public static async Task<string> SearchCommand(CommandService commandService, ICommandContext commandContext, string command)
 		{
-			var sr = commandService.Search(commandContext, command);
+			SearchResult sr = commandService.Search(commandContext, command);
 
 			if (sr.IsSuccess)
 				return sr.Text;
@@ -314,8 +228,8 @@ namespace tModloaderDiscordBot
 
 		public static bool FindDeepCommand(IEnumerable<ModuleInfo> modules, string command, ref string output)
 		{
-			var module = command.StartsWith("module:");
-			var text = module ? command.Split(":")[1].Trim() : command;
+			bool module = command.StartsWith("module:");
+			string text = module ? command.Split(":")[1].Trim() : command;
 
 			foreach (var mod in modules)
 			{

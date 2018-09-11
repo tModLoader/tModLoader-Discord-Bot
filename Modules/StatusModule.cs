@@ -1,12 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Discord.Commands;
+using tModloaderDiscordBot.Components;
 using tModloaderDiscordBot.Preconditions;
 using tModloaderDiscordBot.Services;
+using tModloaderDiscordBot.Utils;
 
 namespace tModloaderDiscordBot.Modules
 {
@@ -36,7 +36,7 @@ namespace tModloaderDiscordBot.Modules
 				if (StatusService.HasName(name))
 				{
 					Config.SiteStatuses.Remove(Config.SiteStatuses.First(x => x.Name.EqualsIgnoreCase(name)));
-					await Config.Update(GuildConfigService);
+					await Config.Update();
 					await msg.ModifyAsync(x => x.Content = $"Address for `{name}` was removed.");
 					continue;
 				}
@@ -46,7 +46,7 @@ namespace tModloaderDiscordBot.Modules
 				if (StatusService.HasAddress(address))
 				{
 					Config.SiteStatuses = Config.SiteStatuses.Where(x => !x.Name.EqualsIgnoreCase(address)).ToList();
-					await Config.Update(GuildConfigService);
+					await Config.Update();
 					await msg.ModifyAsync(x => x.Content = $"Address `{address}` was removed.");
 					continue;
 				}
@@ -87,7 +87,7 @@ namespace tModloaderDiscordBot.Modules
 			}
 
 			Config.SiteStatuses.Add(new SiteStatus { Address = addr, Name = name });
-			await Config.Update(GuildConfigService);
+			await Config.Update();
 			await StatusService.UpdateForConfig(Config);
 			await msg.ModifyAsync(x => x.Content = $"Address `{addr}` was added under name `{name}`.");
 		}

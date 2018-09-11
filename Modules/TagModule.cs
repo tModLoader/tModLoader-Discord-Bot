@@ -8,6 +8,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using tModloaderDiscordBot.Services;
 using tModloaderDiscordBot.Tags;
+using tModloaderDiscordBot.Utils;
 
 namespace tModloaderDiscordBot.Modules
 {

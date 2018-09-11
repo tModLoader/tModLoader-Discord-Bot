@@ -4,11 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using tModloaderDiscordBot.Configs;
+using tModloaderDiscordBot.Components;
+using tModloaderDiscordBot.Utils;
 
 namespace tModloaderDiscordBot.Services
 {
@@ -91,17 +91,7 @@ namespace tModloaderDiscordBot.Services
 
 			foreach (var filePath in filePaths)
 			{
-				await _semaphore.WaitAsync();
-				string json;
-				try
-				{
-					json = await File.ReadAllTextAsync(filePath);
-				}
-				finally
-				{
-					_semaphore.Release();
-				}
-
+				string json = await FileUtils.FileReadToEndAsync(_semaphore, filePath);
 				var config = JsonConvert.DeserializeObject<GuildConfig>(json);
 				await UpdateCacheForConfig(config);
 			}
@@ -109,17 +99,7 @@ namespace tModloaderDiscordBot.Services
 
 		internal async Task<GuildConfig> ReadGuildConfig(ulong guildId)
 		{
-			await _semaphore.WaitAsync();
-			string json;
-			try
-			{
-				json = await File.ReadAllTextAsync(Settings.GuildConfigPath(guildId));
-			}
-			finally
-			{
-				_semaphore.Release();
-			}
-
+			string json = await FileUtils.FileReadToEndAsync(_semaphore, Settings.GuildConfigPath(guildId));
 			var config = JsonConvert.DeserializeObject<GuildConfig>(json);
 			return config;
 		}
@@ -128,15 +108,7 @@ namespace tModloaderDiscordBot.Services
 		{
 			Directory.CreateDirectory(Settings.GuildPath(config.GuildId));
 			var json = JsonConvert.SerializeObject(config, Formatting.Indented);
-			await _semaphore.WaitAsync();
-			try
-			{
-				await File.WriteAllTextAsync(Settings.GuildConfigPath(config.GuildId), json);
-			}
-			finally
-			{
-				_semaphore.Release();
-			}
+			await FileUtils.FileWriteAsync(_semaphore, Settings.GuildConfigPath(config.GuildId), json);
 		}
 	}
 }

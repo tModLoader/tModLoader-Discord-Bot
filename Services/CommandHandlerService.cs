@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
+using tModloaderDiscordBot.Utils;
 
 namespace tModloaderDiscordBot.Services
 {

@@ -1,5 +1,5 @@
-﻿using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
+using tModloaderDiscordBot.Utils;
 
 namespace tModloaderDiscordBot.Tags
 {

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -30,6 +29,7 @@ namespace tModloaderDiscordBot.Services
 			_commandService.Log += Log;
 		}
 
+		// todo Write log file
 		public Task Log(LogMessage msg)
 		{
 			Console.WriteLine(msg.ToString());
