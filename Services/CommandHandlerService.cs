@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,12 +13,16 @@ namespace tModloaderDiscordBot.Services
 	public class CommandHandlerService
 	{
 		private readonly CommandService _commandService;
+		private readonly GuildTagService _tagService;
+		private readonly LoggingService _loggingService;
 		private readonly DiscordSocketClient _client;
 		private readonly IServiceProvider _services;
 
 		public CommandHandlerService(IServiceProvider services)
 		{
 			_commandService = services.GetRequiredService<CommandService>();
+			_tagService = services.GetRequiredService<GuildTagService>();
+			_loggingService = services.GetRequiredService<LoggingService>();
 			_client = services.GetRequiredService<DiscordSocketClient>();
 			_services = services;
 
@@ -35,8 +41,10 @@ namespace tModloaderDiscordBot.Services
 
 		private async Task HandleCommand(SocketMessage socketMessage)
 		{
+			// Program is ready
 			if (!Program.Ready) return;
 
+			// Valid message, no bot, no webhook, and valid channel
 			if (!(socketMessage is SocketUserMessage message)
 				|| message.Author.IsBot
 				|| message.Author.IsWebhook
@@ -45,20 +53,73 @@ namespace tModloaderDiscordBot.Services
 
 			var context = new SocketCommandContext(_client, message);
 
+			// Message starts with prefix
 			int argPos = 0;
 			if (message.Content.EqualsIgnoreCase(".")
 				|| !(message.HasCharPrefix('.', ref argPos)))
 				return;
 
-			// todo handle tags
-
+			// Execute command
 			var result = await _commandService.ExecuteAsync(context, argPos, _services);
 
+			// Command failed
 			if (!result.IsSuccess)
 			{
-				if (!result.ErrorReason.EqualsIgnoreCase("Unknown command."))
+				// It might be a tag.
+				result = await TryGettingTag(message, channel, context, result);
+
+				if (!result.IsSuccess && !result.ErrorReason.EqualsIgnoreCase("Unknown command."))
 					await context.Channel.SendMessageAsync(result.ErrorReason);
 			}
+		}
+
+		private async Task<IResult> TryGettingTag(SocketUserMessage message, SocketTextChannel channel, SocketCommandContext context, IResult result)
+		{
+			if (channel != null)
+			{
+				// skip prefix
+				var key = message.Content.Substring(1);
+				var check = Format.Sanitize(key);
+				if (check.Equals(key))
+				{
+					await _loggingService.Log(new LogMessage(LogSeverity.Info, "CommandHandlerService", $"User {message.Author.FullName()} in server {channel.Guild.Name} in channel {channel.Name} attempted to get tag {key}"));
+					_tagService.Initialize(context.Guild.Id);
+
+					var tag = _tagService.GetTag(message.Author.Id, key);
+
+					// We own this tag
+					if (tag != null)
+					{
+						await channel.SendMessageAsync($"{Format.Bold($"Tag: {tag.Name}")}" +
+													   $"\n{tag.Value}");
+					}
+					// We dont own tag, look for other people's tags
+					else
+					{
+						// Look for global tags
+						var tags = _tagService.GetTags(key, globalTagsOnly: true);
+
+						// One found, list it
+						if (tags.Count() == 1)
+						{
+							tag = tags.First();
+							return await _commandService.ExecuteAsync(context, $"tag -g {tag.OwnerId} {tag.Name}", services:_services, multiMatchHandling: MultiMatchHandling.Exception);
+						}
+
+						// More found
+						if (tags.Count() >= 2)
+						{
+							// todo find by what we sent
+							return await _commandService.ExecuteAsync(context, $"tag -f tags::global", services: _services, multiMatchHandling: MultiMatchHandling.Exception);
+						}
+
+						string tagstr = message.Content.Substring(1);
+						return await _commandService.ExecuteAsync(context, $"tag -f {tagstr}", services: _services, multiMatchHandling: MultiMatchHandling.Exception);
+					}
+				}
+			}
+
+			return result;
 		}
 	}
 }

@@ -51,6 +51,7 @@ namespace tModloaderDiscordBot.Services
 			{
 				_updateTimer = new Timer(async (e) =>
 				{
+					await Log("Running maintenance from 6 hour timer");
 					await Maintain(_client);
 				},
 				null, TimeSpan.FromHours(6), TimeSpan.FromHours(6));
@@ -73,7 +74,7 @@ namespace tModloaderDiscordBot.Services
 				var parsedBinary = long.Parse(savedBinary);
 				var savedBinaryDate = BotUtils.DateTimeFromUnixTimestampSeconds(parsedBinary);
 				dateDiff = BotUtils.DateTimeFromUnixTimestampSeconds(BotUtils.GetCurrentUnixTimestampSeconds()) - savedBinaryDate;
-				await Log($"Read date difference: {dateDiff}");
+				await Log($"Read date difference for mod cache update: {dateDiff}");
 			}
 
 			// Needs to maintain data

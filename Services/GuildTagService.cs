@@ -19,12 +19,14 @@ namespace tModloaderDiscordBot.Services
 		public bool HasTag(ulong id, string key) => GuildTagsOwnedBy(id).Any(x => x.MatchesName(key));
 		public GuildTag GetTag(ulong id, string key) => GuildTagsOwnedBy(id).FirstOrDefault(x => x.MatchesName(key));
 		public IEnumerable<GuildTag> GetTags(ulong id) => GuildTagsOwnedBy(id);
-		public IEnumerable<GuildTag> GetTags(string predicate, ulong? id = null)
+		public IEnumerable<GuildTag> GetTags(string predicate, ulong? id = null, bool globalTagsOnly = false)
 		{
 			var tags = id.HasValue ? GuildTagsOwnedBy(id.Value) : _guildConfig.GuildTags;
 
 			foreach (var guildTag in tags)
 			{
+				if (globalTagsOnly && !guildTag.IsGlobal) continue;
+
 				if (guildTag.Name.Contains(predicate))
 					yield return guildTag;
 			}

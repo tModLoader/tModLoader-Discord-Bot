@@ -10,6 +10,7 @@ namespace tModloaderDiscordBot.Services
 	// todo scheduled backups
 	// todo write to logs daily logs with backups
 	// https://stackoverflow.com/questions/16138345/scheduled-task-assistance-please
+	//https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/?view=aspnetcore-2.1
 	public class LoggingService
 	{
 		private readonly CommandService _commandService;
