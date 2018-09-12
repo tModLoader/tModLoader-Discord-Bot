@@ -50,6 +50,8 @@ namespace tModloaderDiscordBot.Services
 				|| !(message.HasCharPrefix('.', ref argPos)))
 				return;
 
+			// todo handle tags
+
 			var result = await _commandService.ExecuteAsync(context, argPos, _services);
 
 			if (!result.IsSuccess)

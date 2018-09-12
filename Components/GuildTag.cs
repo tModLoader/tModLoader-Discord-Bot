@@ -1,7 +1,7 @@
 ﻿using Discord;
 using tModloaderDiscordBot.Utils;
 
-namespace tModloaderDiscordBot.Tags
+namespace tModloaderDiscordBot.Components
 {
 	public sealed class GuildTag
 	{

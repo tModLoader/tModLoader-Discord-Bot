@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using tModloaderDiscordBot.Tags;
+using tModloaderDiscordBot.Components;
 
 namespace tModloaderDiscordBot.Services
 {

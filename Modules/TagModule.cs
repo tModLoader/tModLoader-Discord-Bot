@@ -6,15 +6,16 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using tModloaderDiscordBot.Components;
+using tModloaderDiscordBot.Preconditions;
 using tModloaderDiscordBot.Services;
-using tModloaderDiscordBot.Tags;
 using tModloaderDiscordBot.Utils;
 
 namespace tModloaderDiscordBot.Modules
 {
 	//@todo add global/info command
 	[Group("tag")]
-	public class TagModule : BotModuleBase
+	public class TagModule : ConfigModuleBase
 	{
 		public GuildTagService TagService { get; set; }
 
@@ -235,6 +236,42 @@ namespace tModloaderDiscordBot.Modules
 
 			await ListAsync(tags, page);
 			return tags;
+		}
+
+		[Command("global")]
+		[HasPermission]
+		public async Task GlobalAsync(string key, bool toggle)
+			=> await GlobalAsync(Context.User.Id, key, toggle);
+
+		[Command("global")]
+		[HasPermission]
+		public async Task GlobalAsync(IGuildUser user, string key, bool toggle)
+			=> await GlobalAsync(user.Id, key, toggle);
+
+		private async Task GlobalAsync(ulong id, string key, bool toggle)
+		{
+			bool CheckKeyValidity() => Format.Sanitize(key).Equals(key) && !key.Contains(" ");
+
+			if (!CheckKeyValidity())
+			{
+				await ReplyAsync($"Invalid key. Key must not contain any markdown and whitespace.");
+				return;
+			}
+
+			if (!TagService.HasTag(id, key))
+			{
+				await TryFindOtherTags(key);
+				return;
+			}
+
+			var tag = TagService.GetTags(id).FirstOrDefault(x => x.MatchesName(key));
+
+			if (tag != null)
+			{
+				tag.IsGlobal = toggle;
+				await Config.Update();
+				await ReplyAsync($"Tag `{key}` owned by {id} is {(toggle ? "now global" : "no longer global")}.");
+			}
 		}
 	}
 }

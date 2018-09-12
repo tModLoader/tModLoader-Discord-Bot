@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Discord.WebSocket;
 using Newtonsoft.Json;
 using tModloaderDiscordBot.Services;
-using tModloaderDiscordBot.Tags;
 
 namespace tModloaderDiscordBot.Components
 {

@@ -107,7 +107,7 @@ namespace tModloaderDiscordBot.Modules
 				if (toCheck.Length > 0)
 				{
 					// TODO levenhstein dist, closest guess
-					if (!StatusService.HasAddress(toCheck))
+					if (!StatusService.HasName(toCheck))
 					{
 						await msg.ModifyAsync(x => x.Content = $"Address for `{toCheck}` was not found");
 						return;
