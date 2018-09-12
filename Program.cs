@@ -19,6 +19,7 @@ namespace tModloaderDiscordBot
 		private DiscordSocketClient _client;
 		private IServiceProvider _services;
 		private LoggingService _loggingService;
+		private ModService _modService;
 
 		private async Task StartAsync()
 		{
@@ -34,7 +35,8 @@ namespace tModloaderDiscordBot
 					.AddSingleton<GuildConfigService>()
 					.AddSingleton<SiteStatusService>()
 					.AddSingleton<GuildTagService>()
-					.AddSingleton<PermissionService>();
+					.AddSingleton<PermissionService>()
+					.AddSingleton<ModService>();
 
 				//foreach (var type in AppDomain.CurrentDomain.GetAssemblies()
 				//	.SelectMany(x => x.GetTypes())
@@ -66,6 +68,7 @@ namespace tModloaderDiscordBot
 			await _services.GetRequiredService<CommandHandlerService>().InitializeAsync();
 			_loggingService = _services.GetRequiredService<LoggingService>();
 			_loggingService.InitializeAsync();
+			_modService = _services.GetRequiredService<ModService>();
 
 			_client.Ready += ClientReady;
 			_client.LatencyUpdated += ClientLatencyUpdated;
@@ -109,9 +112,11 @@ namespace tModloaderDiscordBot
 
 			await _services.GetRequiredService<GuildConfigService>().SetupAsync();
 			await _services.GetRequiredService<SiteStatusService>().UpdateAsync();
+			_modService.Initialize();
+			await _modService.Maintain(_client);
 
 			await _loggingService.Log(new LogMessage(LogSeverity.Info, "ClientReady", "Done."));
-			await _client.SetGameAsync("Bot has started");
+			await _client.SetGameAsync("tModLoader " + ModService.tMLVersion);
 			await ClientLatencyUpdated(_client.Latency, _client.Latency);
 			Ready = true;
 		}

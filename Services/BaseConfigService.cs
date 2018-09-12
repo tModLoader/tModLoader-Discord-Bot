@@ -7,16 +7,14 @@ using tModloaderDiscordBot.Components;
 namespace tModloaderDiscordBot.Services
 {
     [SuppressMessage("ReSharper", "InconsistentNaming")]
-    public abstract class BaseConfigService : IBotService
+    public abstract class BaseConfigService : BaseService
     {
-	    protected readonly LoggingService _loggingService;
 	    protected readonly GuildConfigService _guildConfigService;
 	    protected GuildConfig _guildConfig;
 	    protected ulong _gid;
 
-	    protected BaseConfigService(IServiceProvider services)
+	    protected BaseConfigService(IServiceProvider services) : base(services)
 	    {
-		    _loggingService = services.GetRequiredService<LoggingService>();
 			_guildConfigService = services.GetRequiredService<GuildConfigService>();
 		}
 
