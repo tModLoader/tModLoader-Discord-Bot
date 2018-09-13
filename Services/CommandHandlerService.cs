@@ -12,6 +12,7 @@ namespace tModloaderDiscordBot.Services
 {
 	public class CommandHandlerService
 	{
+		private readonly UserHandlerService _userHandlerService;
 		private readonly CommandService _commandService;
 		private readonly GuildTagService _tagService;
 		private readonly LoggingService _loggingService;
@@ -20,6 +21,7 @@ namespace tModloaderDiscordBot.Services
 
 		public CommandHandlerService(IServiceProvider services)
 		{
+			_userHandlerService = services.GetRequiredService<UserHandlerService>();
 			_commandService = services.GetRequiredService<CommandService>();
 			_tagService = services.GetRequiredService<GuildTagService>();
 			_loggingService = services.GetRequiredService<LoggingService>();
@@ -59,6 +61,9 @@ namespace tModloaderDiscordBot.Services
 				|| !(message.HasCharPrefix('.', ref argPos)))
 				return;
 
+			if (!_userHandlerService.UserMatchesPrerequisites(message.Author.Id))
+				return;
+
 			// Execute command
 			var result = await _commandService.ExecuteAsync(context, argPos, _services);
 
@@ -70,6 +75,10 @@ namespace tModloaderDiscordBot.Services
 
 				if (!result.IsSuccess && !result.ErrorReason.EqualsIgnoreCase("Unknown command."))
 					await context.Channel.SendMessageAsync(result.ErrorReason);
+			}
+			else
+			{
+				_userHandlerService.AddBasicBotCooldown(message.Author.Id);
 			}
 		}
 
@@ -92,12 +101,14 @@ namespace tModloaderDiscordBot.Services
 					{
 						await channel.SendMessageAsync($"{Format.Bold($"Tag: {tag.Name}")}" +
 													   $"\n{tag.Value}");
+						_userHandlerService.AddBasicBotCooldown(message.Author.Id);
 					}
 					// We dont own tag, look for other people's tags
 					else
 					{
 						// Look for global tags
 						var tags = _tagService.GetTags(key, globalTagsOnly: true);
+						_userHandlerService.AddBasicBotCooldown(message.Author.Id);
 
 						// One found, list it
 						if (tags.Count() == 1)

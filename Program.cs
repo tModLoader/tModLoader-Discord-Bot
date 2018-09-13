@@ -25,18 +25,19 @@ namespace tModloaderDiscordBot
 		{
 			IServiceCollection BuildServiceCollection()
 			{
-				var serviceCollection = 
+				var serviceCollection =
 					new ServiceCollection()
-					.AddSingleton(_client)
-					.AddSingleton(_commandService)
-					.AddSingleton<CommandHandlerService>()
-					.AddSingleton(new ResourceManager("tModloaderDiscordBot.Properties.Resources", GetType().Assembly))
-					.AddSingleton<LoggingService>()
-					.AddSingleton<GuildConfigService>()
-					.AddSingleton<SiteStatusService>()
-					.AddSingleton<GuildTagService>()
-					.AddSingleton<PermissionService>()
-					.AddSingleton<ModService>();
+						.AddSingleton(_client)
+						.AddSingleton(_commandService)
+						.AddSingleton<UserHandlerService>()
+						.AddSingleton<CommandHandlerService>()
+						.AddSingleton(new ResourceManager("tModloaderDiscordBot.Properties.Resources", GetType().Assembly))
+						.AddSingleton<LoggingService>()
+						.AddSingleton<GuildConfigService>()
+						.AddSingleton<SiteStatusService>()
+						.AddSingleton<GuildTagService>()
+						.AddSingleton<PermissionService>()
+						.AddSingleton<ModService>();
 
 				//foreach (var type in AppDomain.CurrentDomain.GetAssemblies()
 				//	.SelectMany(x => x.GetTypes())
@@ -57,6 +58,7 @@ namespace tModloaderDiscordBot
 			_client = new DiscordSocketClient(new DiscordSocketConfig
 			{
 				AlwaysDownloadUsers = true,
+				LogLevel = LogSeverity.Verbose
 			});
 			_commandService = new CommandService(new CommandServiceConfig
 			{
