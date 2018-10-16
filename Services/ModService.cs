@@ -21,7 +21,7 @@ namespace tModloaderDiscordBot.Services
 		internal const string ModInfoUrl = "http://javid.ddns.net/tModLoader/tools/modinfo.php";
 		internal const string HomepageUrl = "http://javid.ddns.net/tModLoader/moddescription.php";
 		internal const string PopularUrl = "http://javid.ddns.net/tModLoader/tools/populartop10.php";
-		internal const string HotUrl = "http://javid.ddns.net/tModLoader/BotUtils/hottop10.php";
+		internal const string HotUrl = "http://javid.ddns.net/tModLoader/tools/hottop10.php";
 
 		private static string ModDir => "mods";
 		internal static string tMLVersion;
@@ -34,7 +34,7 @@ namespace tModloaderDiscordBot.Services
 				.Select(x => Path.GetFileNameWithoutExtension(x).RemoveWhitespace());
 
 		private static SemaphoreSlim _semaphore;
-		private static Timer _updateTimer;
+		//private static Timer _updateTimer;
 		private readonly DiscordSocketClient _client;
 
 		public ModService(IServiceProvider services, DiscordSocketClient client) : base(services)
@@ -42,20 +42,20 @@ namespace tModloaderDiscordBot.Services
 			_client = client;
 		}
 
-		public void Initialize()
+		public async Task Initialize()
 		{
 			tMLVersion = "v0.10.1.5";
 			_semaphore = new SemaphoreSlim(1, 1);
 
-			if (_updateTimer == null)
-			{
-				_updateTimer = new Timer(async (e) =>
-				{
-					await Log("Running maintenance from 6 hour timer");
-					await Maintain(_client);
-				},
-				null, TimeSpan.FromHours(6), TimeSpan.FromHours(6));
-			}
+			//if (_updateTimer == null)
+			//{
+			//	_updateTimer = new Timer(async (e) =>
+			//	{
+			//		await Log("Running maintenance from 6 hour timer");
+			//		await Maintain(_client);
+			//	},
+			//	null, TimeSpan.FromHours(6), TimeSpan.FromHours(6));
+			//}
 		}
 
 		public async Task Maintain(IDiscordClient client)

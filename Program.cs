@@ -1,10 +1,10 @@
-﻿using System;
-using System.Resources;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Resources;
+using System.Threading.Tasks;
 using tModloaderDiscordBot.Services;
 
 namespace tModloaderDiscordBot
@@ -114,8 +114,8 @@ namespace tModloaderDiscordBot
 
 			await _services.GetRequiredService<GuildConfigService>().SetupAsync();
 			await _services.GetRequiredService<SiteStatusService>().UpdateAsync();
-			_modService.Initialize();
-			await _modService.Maintain(_client);
+			await _modService.Initialize();
+			//await _modService.Maintain(_client);
 
 			await _loggingService.Log(new LogMessage(LogSeverity.Info, "ClientReady", "Done."));
 			await _client.SetGameAsync("tModLoader " + ModService.tMLVersion);

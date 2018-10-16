@@ -58,7 +58,8 @@ namespace tModloaderDiscordBot.Services
 			// Message starts with prefix
 			int argPos = 0;
 			if (message.Content.EqualsIgnoreCase(".")
-				|| !(message.HasCharPrefix('.', ref argPos)))
+				|| !message.HasCharPrefix('.', ref argPos)
+			    || !char.IsLetter(message.Content[1]))
 				return;
 
 			if (!_userHandlerService.UserMatchesPrerequisites(message.Author.Id))
@@ -102,6 +103,7 @@ namespace tModloaderDiscordBot.Services
 						await channel.SendMessageAsync($"{Format.Bold($"Tag: {tag.Name}")}" +
 													   $"\n{tag.Value}");
 						_userHandlerService.AddBasicBotCooldown(message.Author.Id);
+						return new ExecuteResult();
 					}
 					// We dont own tag, look for other people's tags
 					else
