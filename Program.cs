@@ -31,6 +31,7 @@ namespace tModloaderDiscordBot
 						.AddSingleton(_commandService)
 						.AddSingleton<UserHandlerService>()
 						.AddSingleton<CommandHandlerService>()
+						.AddSingleton<HastebinService>()
 						.AddSingleton(new ResourceManager("tModloaderDiscordBot.Properties.Resources", GetType().Assembly))
 						.AddSingleton<LoggingService>()
 						.AddSingleton<GuildConfigService>()
@@ -71,6 +72,7 @@ namespace tModloaderDiscordBot
 			_loggingService = _services.GetRequiredService<LoggingService>();
 			_loggingService.InitializeAsync();
 			_modService = _services.GetRequiredService<ModService>();
+			_services.GetRequiredService<HastebinService>();
 
 			_client.Ready += ClientReady;
 			_client.LatencyUpdated += ClientLatencyUpdated;
@@ -78,8 +80,11 @@ namespace tModloaderDiscordBot
 			Console.Title = $@"tModLoader Bot - {DateTime.Now}";
 			await Console.Out.WriteLineAsync($"https://discordapp.com/api/oauth2/authorize?client_id=&scope=bot");
 			await Console.Out.WriteLineAsync($"Start date: {DateTime.Now}");
-
+#if TESTBOT
+			await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TestBotToken"));
+#else
 			await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TmlBotToken"));
+#endif
 			await _client.StartAsync();
 
 			await Task.Delay(-1);
@@ -115,7 +120,7 @@ namespace tModloaderDiscordBot
 			await _services.GetRequiredService<GuildConfigService>().SetupAsync();
 			await _services.GetRequiredService<SiteStatusService>().UpdateAsync();
 			await _modService.Initialize();
-			//await _modService.Maintain(_client);
+			await _modService.Maintain(_client);
 
 			await _loggingService.Log(new LogMessage(LogSeverity.Info, "ClientReady", "Done."));
 			await _client.SetGameAsync("tModLoader " + ModService.tMLVersion);
