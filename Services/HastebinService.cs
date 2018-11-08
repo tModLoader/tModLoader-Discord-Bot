@@ -59,7 +59,7 @@ namespace tModloaderDiscordBot.Services
 				if (c == ';') count++;
 			}
 
-			if(count > 1 && message.Content.Split('\n').Length > 8)
+			if(count > 1 && message.Content.Split('\n').Length > 16)
 			{
 				string hastebinContent = message.Content;
 				hastebinContent = hastebinContent.Trim('`');
