@@ -100,7 +100,7 @@ namespace tModloaderDiscordBot.Modules
 		string[] vanillaClasses = new string[] { "item", "projectile", "tile" };
 
 		[Command("documentation")]
-		[Alias("doc")]
+		[Alias("doc", "docs")]
 		[Summary("Generates a link to tModLoader or Terraria class documentation")]
 		[Remarks("doc <classname>[.<field/method name>]\ndoc Item.value")]
 		public async Task Documentation([Remainder]string searchTerm)
