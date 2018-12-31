@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
+using HtmlAgilityPack;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -97,7 +98,8 @@ namespace tModloaderDiscordBot.Modules
 		}
 
 		// Current classes documented on the Wiki
-		string[] vanillaClasses = new string[] { "item", "projectile", "tile" };
+		static string[] vanillaClasses = new string[] { "item", "projectile", "tile" };
+		static Dictionary<string, HashSet<string>> vanillaFields = new Dictionary<string, HashSet<string>>();
 
 		[Command("documentation")]
 		[Alias("doc", "docs")]
@@ -112,8 +114,36 @@ namespace tModloaderDiscordBot.Modules
 			string methodName = parts.Length >= 2 ? parts[1].Trim().ToLowerInvariant() : "";
 			string methodNameLower = methodName.ToLowerInvariant();
 
-			if (vanillaClasses.Contains(className))
-				await ReplyAsync($"Documentation for {className}: https://github.com/blushiemagic/tModLoader/wiki/{className}-Class-Documentation");
+			if (vanillaClasses.Contains(classNameLower))
+			{
+				if (methodName == "")
+					await ReplyAsync($"Documentation for `{className}`: https://github.com/blushiemagic/tModLoader/wiki/{className}-Class-Documentation");
+				else
+				{
+					if(!vanillaFields.TryGetValue(classNameLower, out var fields))
+					{
+						fields = new HashSet<string>();
+						//using (var client = new WebClient())
+						//{
+						//string response = await client.DownloadStringTaskAsync($"https://github.com/blushiemagic/tModLoader/wiki/{className}-Class-Documentation");
+						HtmlWeb hw = new HtmlWeb();
+						HtmlDocument doc = await hw.LoadFromWebAsync($"https://github.com/blushiemagic/tModLoader/wiki/{className}-Class-Documentation");
+						foreach (HtmlNode link in doc.DocumentNode.SelectNodes("//a[@href]"))
+						{
+							HtmlAttribute att = link.Attributes["href"];
+							if (att.Value.StartsWith("#") && att.Value.Length > 1)
+								fields.Add(att.Value.Substring(1));
+						}
+						//}
+
+						vanillaFields[classNameLower] = fields;
+					}
+					if (fields.Contains(methodNameLower))
+						await ReplyAsync($"Documentation for `{className}.{methodName}`: https://github.com/blushiemagic/tModLoader/wiki/{className}-Class-Documentation#{methodNameLower}");
+					else
+						await ReplyAsync($"Documentation for `{className}.{methodName}` not found");
+				}
+			}
 			else
 			{
 				// might be a modded class:

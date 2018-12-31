@@ -33,6 +33,7 @@ namespace tModloaderDiscordBot.Services
 			_client.MessageReceived -= HandleCommand;
 		}
 
+		// TODO: Autohastebin .cs or .txt file attachments.
 		private async Task HandleCommand(SocketMessage socketMessage)
 		{
 			// Program is ready
