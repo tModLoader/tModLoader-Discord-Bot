@@ -27,6 +27,17 @@ namespace tModloaderDiscordBot.Services
 			{
 				if (globalTagsOnly && !guildTag.IsGlobal) continue;
 
+				if (guildTag.MatchesName(predicate))
+				{
+					yield return guildTag;
+					yield break;
+				}
+			}
+
+			foreach (var guildTag in tags)
+			{
+				if (globalTagsOnly && !guildTag.IsGlobal) continue;
+
 				if (guildTag.Name.Contains(predicate))
 					yield return guildTag;
 			}
