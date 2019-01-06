@@ -109,7 +109,7 @@ namespace tModloaderDiscordBot.Services
 					else
 					{
 						// Look for global tags
-						var tags = _tagService.GetTags(key, globalTagsOnly: true);
+						var tags = _tagService.GetTags(key, globalTagsOnly: true).ToList();
 						_userHandlerService.AddBasicBotCooldown(message.Author.Id);
 
 						// One found, list it
