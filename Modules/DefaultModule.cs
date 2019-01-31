@@ -86,6 +86,17 @@ namespace tModloaderDiscordBot.Modules
 
 		}
 
+		[Command("wikis")]
+		[Alias("ws")]
+		[Summary("Generates a search for a term in tModLoader wiki")]
+		[Remarks("wikis <search term>\nwikis TagCompound")]
+		public async Task WikiSearch([Remainder]string searchTerm)
+		{
+			searchTerm = searchTerm.Trim();
+			string encoded = WebUtility.UrlEncode(searchTerm);
+			await ReplyAsync($"tModLoader Wiki results for {searchTerm}: https://github.com/bluemagic123/tModLoader/search?q={encoded}&type=Wikis");
+		}
+
 		[Command("examplemod")]
 		[Alias("em", "example")]
 		[Summary("Generates a search for a term in ExampleMod source code")]
