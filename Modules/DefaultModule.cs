@@ -109,7 +109,7 @@ namespace tModloaderDiscordBot.Modules
 		}
 
 		// Current classes documented on the Wiki
-		static string[] vanillaClasses = new string[] { "item", "projectile", "tile" };
+		static string[] vanillaClasses = new string[] { "item", "projectile", "tile", "npc" };
 		static Dictionary<string, HashSet<string>> vanillaFields = new Dictionary<string, HashSet<string>>();
 
 		[Command("documentation")]
