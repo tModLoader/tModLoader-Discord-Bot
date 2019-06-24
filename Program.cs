@@ -20,6 +20,7 @@ namespace tModloaderDiscordBot
 		private IServiceProvider _services;
 		private LoggingService _loggingService;
 		private ModService _modService;
+		//private ReactionRoleService _reactionRoleService;
 
 		private async Task StartAsync()
 		{
@@ -32,6 +33,7 @@ namespace tModloaderDiscordBot
 						.AddSingleton<UserHandlerService>()
 						.AddSingleton<CommandHandlerService>()
 						.AddSingleton<HastebinService>()
+						//.AddSingleton<ReactionRoleService>()
 						.AddSingleton(new ResourceManager("tModloaderDiscordBot.Properties.Resources", GetType().Assembly))
 						.AddSingleton<LoggingService>()
 						.AddSingleton<GuildConfigService>()
@@ -72,6 +74,7 @@ namespace tModloaderDiscordBot
 			_loggingService = _services.GetRequiredService<LoggingService>();
 			_loggingService.InitializeAsync();
 			_modService = _services.GetRequiredService<ModService>();
+			//_reactionRoleService = _services.GetRequiredService<ReactionRoleService>();
 			_services.GetRequiredService<HastebinService>();
 
 			_client.Ready += ClientReady;
@@ -121,6 +124,7 @@ namespace tModloaderDiscordBot
 			await _services.GetRequiredService<SiteStatusService>().UpdateAsync();
 			await _modService.Initialize();
 			await _modService.Maintain(_client);
+			//await _reactionRoleService.Maintain(_client);
 
 			await _loggingService.Log(new LogMessage(LogSeverity.Info, "ClientReady", "Done."));
 			await _client.SetGameAsync("tModLoader " + ModService.tMLVersion);
