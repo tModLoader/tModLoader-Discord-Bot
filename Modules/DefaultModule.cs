@@ -94,7 +94,7 @@ namespace tModloaderDiscordBot.Modules
 		{
 			searchTerm = searchTerm.Trim();
 			string encoded = WebUtility.UrlEncode(searchTerm);
-			await ReplyAsync($"tModLoader Wiki results for {searchTerm}: https://github.com/bluemagic123/tModLoader/search?q={encoded}&type=Wikis");
+			await ReplyAsync($"tModLoader Wiki results for {searchTerm}: https://github.com/tModLoader/tModLoader/search?q={encoded}&type=Wikis");
 		}
 
 		[Command("examplemod")]
@@ -105,7 +105,7 @@ namespace tModloaderDiscordBot.Modules
 		{
 			searchTerm = searchTerm.Trim();
 			string encoded = System.Net.WebUtility.UrlEncode(searchTerm);
-			await ReplyAsync($"ExampleMod results for {searchTerm}: https://github.com/bluemagic123/tModLoader/search?utf8=✓&q={encoded}+path:ExampleMod&type=Code");
+			await ReplyAsync($"ExampleMod results for {searchTerm}: https://github.com/tModLoader/tModLoader/search?utf8=✓&q={encoded}+path:ExampleMod&type=Code");
 		}
 
 		// Current classes documented on the Wiki
@@ -128,7 +128,7 @@ namespace tModloaderDiscordBot.Modules
 			if (vanillaClasses.Contains(classNameLower))
 			{
 				if (methodName == "")
-					await ReplyAsync($"Documentation for `{className}`: https://github.com/blushiemagic/tModLoader/wiki/{className}-Class-Documentation");
+					await ReplyAsync($"Documentation for `{className}`: https://github.com/tModLoader/tModLoader/wiki/{className}-Class-Documentation");
 				else
 				{
 					if(!vanillaFields.TryGetValue(classNameLower, out var fields))
@@ -136,9 +136,9 @@ namespace tModloaderDiscordBot.Modules
 						fields = new HashSet<string>();
 						//using (var client = new WebClient())
 						//{
-						//string response = await client.DownloadStringTaskAsync($"https://github.com/blushiemagic/tModLoader/wiki/{className}-Class-Documentation");
+						//string response = await client.DownloadStringTaskAsync($"https://github.com/tModLoader/tModLoader/wiki/{className}-Class-Documentation");
 						HtmlWeb hw = new HtmlWeb();
-						HtmlDocument doc = await hw.LoadFromWebAsync($"https://github.com/blushiemagic/tModLoader/wiki/{className}-Class-Documentation");
+						HtmlDocument doc = await hw.LoadFromWebAsync($"https://github.com/tModLoader/tModLoader/wiki/{className}-Class-Documentation");
 						foreach (HtmlNode link in doc.DocumentNode.SelectNodes("//a[@href]"))
 						{
 							HtmlAttribute att = link.Attributes["href"];
@@ -150,7 +150,7 @@ namespace tModloaderDiscordBot.Modules
 						vanillaFields[classNameLower] = fields;
 					}
 					if (fields.Contains(methodNameLower))
-						await ReplyAsync($"Documentation for `{className}.{methodName}`: https://github.com/blushiemagic/tModLoader/wiki/{className}-Class-Documentation#{methodNameLower}");
+						await ReplyAsync($"Documentation for `{className}.{methodName}`: https://github.com/tModLoader/tModLoader/wiki/{className}-Class-Documentation#{methodNameLower}");
 					else
 						await ReplyAsync($"Documentation for `{className}.{methodName}` not found");
 				}
@@ -158,11 +158,11 @@ namespace tModloaderDiscordBot.Modules
 			else
 			{
 				// might be a modded class:
-				//http://blushiemagic.github.io/tModLoader/html/namespace_terraria_1_1_mod_loader.js
+				//http://tmodloader.github.io/tModLoader/html/namespace_terraria_1_1_mod_loader.js
 
 				using (var client = new WebClient())
 				{
-					string response = await client.DownloadStringTaskAsync("http://blushiemagic.github.io/tModLoader/html/namespace_terraria_1_1_mod_loader.js");
+					string response = await client.DownloadStringTaskAsync("http://tmodloader.github.io/tModLoader/html/namespace_terraria_1_1_mod_loader.js");
 					response = string.Join("\n", response.Split("\n").Skip(1)).TrimEnd(';');
 					var result = JsonConvert.DeserializeObject<List<List<string>>>(response);
 					var r = result.Find(x => x[0].EqualsIgnoreCase(classNameLower));
@@ -171,20 +171,20 @@ namespace tModloaderDiscordBot.Modules
 						className = r[0];
 						if (methodName == "")
 						{
-							await ReplyAsync($"Documentation for `{className}`: http://blushiemagic.github.io/tModLoader/html/{r[1]}");
+							await ReplyAsync($"Documentation for `{className}`: http://tmodloader.github.io/tModLoader/html/{r[1]}");
 						}
 						else
 						{
-							Console.WriteLine("http://blushiemagic.github.io/tModLoader/html/{r[2]}.js");
+							Console.WriteLine("http://tmodloader.github.io/tModLoader/html/{r[2]}.js");
 							// now to find method name
-							response = await client.DownloadStringTaskAsync($"http://blushiemagic.github.io/tModLoader/html/{r[2]}.js");
+							response = await client.DownloadStringTaskAsync($"http://tmodloader.github.io/tModLoader/html/{r[2]}.js");
 							response = string.Join("\n", response.Split("\n").Skip(1)).TrimEnd(';');
 							result = JsonConvert.DeserializeObject<List<List<string>>>(response);
 							r = result.Find(x => x[0].EqualsIgnoreCase(methodNameLower));
 							if (r != null)
 							{
 								methodName = r[0];
-								await ReplyAsync($"Documentation for `{className}.{methodName}`: http://blushiemagic.github.io/tModLoader/html/{r[1]}");
+								await ReplyAsync($"Documentation for `{className}.{methodName}`: http://tmodloader.github.io/tModLoader/html/{r[1]}");
 							}
 							else
 							{
