@@ -94,7 +94,7 @@ namespace tModloaderDiscordBot.Modules
 		{
 			searchTerm = searchTerm.Trim();
 			string encoded = WebUtility.UrlEncode(searchTerm);
-			await ReplyAsync($"tModLoader Wiki results for {searchTerm}: https://github.com/tModLoader/tModLoader/search?q={encoded}&type=Wikis");
+			await ReplyAsync($"tModLoader Wiki results for {searchTerm}: <https://github.com/tModLoader/tModLoader/search?q={encoded}&type=Wikis>");
 		}
 
 		[Command("examplemod")]
