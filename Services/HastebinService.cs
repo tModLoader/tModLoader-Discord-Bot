@@ -48,29 +48,54 @@ namespace tModloaderDiscordBot.Services
 
 			var context = new SocketCommandContext(_client, message);
 
-			if (string.IsNullOrWhiteSpace(message.Content))
+			string contents = message.Content;
+			bool shouldHastebin = false;
+			bool autoDeleteUserMessage = false;
+			string extra = "";
+
+			var attachents = message.Attachments;
+			if(attachents.Count == 1 && attachents.ElementAt(0) is Attachment attachment)
+			{
+				if (attachment.Filename.EndsWith(".log") || attachment.Filename.EndsWith(".cs") && attachment.Size < 100000)
+				{
+					using (var client = new HttpClient())
+						contents = await client.GetStringAsync(attachment.Url);
+
+					shouldHastebin = true;
+					extra = $" `({attachment.Filename})`";
+				}
+			}
+
+			if (string.IsNullOrWhiteSpace(contents))
 				return;
 
 			int count = 0;
-			foreach (char c in message.Content)
+			if (!shouldHastebin)
 			{
-				if (c == '{') count++;
-				if (c == '}') count++;
-				if (c == '=') count++; 
-				if (c == ';') count++;
+				foreach (char c in contents)
+				{
+					if (c == '{') count++;
+					if (c == '}') count++;
+					if (c == '=') count++;
+					if (c == ';') count++;
+				}
+				if (count > 1 && message.Content.Split('\n').Length > 16)
+				{
+					shouldHastebin = true;
+					autoDeleteUserMessage = true;
+				}
 			}
 
-			if(count > 1 && message.Content.Split('\n').Length > 16)
+			if(shouldHastebin)
 			{
-				string hastebinContent = message.Content;
-				hastebinContent = hastebinContent.Trim('`');
+				string hastebinContent = contents.Trim('`');
 
 				//var msg = await context.Channel.SendMessageAsync("Auto Hastebin in progress");
 				using (var client = new HttpClient())
 				{
 					HttpContent content = new StringContent(hastebinContent);
 
-					var response = await client.PostAsync("https://hastebin.com/documents", content);
+					var response = await client.PostAsync("https://paste.mod.gg/documents", content);
 					string resultContent = await response.Content.ReadAsStringAsync();
 
 					var match = _HasteKeyRegex.Match(resultContent);
@@ -81,9 +106,10 @@ namespace tModloaderDiscordBot.Services
 						return;
 					}
 
-					string hasteUrl = $"https://hastebin.com/{match.Groups["key"]}.cs";
-					await context.Channel.SendMessageAsync($"Automatic Hastebin for {message.Author.Username}: {hasteUrl}");
-					await message.DeleteAsync();
+					string hasteUrl = $"https://paste.mod.gg/{match.Groups["key"]}.cs";
+					await context.Channel.SendMessageAsync($"Automatic Hastebin for {message.Author.Username}{extra}: {hasteUrl}");
+					if(autoDeleteUserMessage)
+						await message.DeleteAsync();
 				}
 			}
 		}
