@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -44,7 +45,7 @@ namespace tModloaderDiscordBot.Services
 
 		public async Task Initialize()
 		{
-			tMLVersion = "v0.10.1.5";
+			tMLVersion = "v0.11.3";
 			_semaphore = new SemaphoreSlim(1, 1);
 
 			//if (_updateTimer == null)
@@ -83,11 +84,28 @@ namespace tModloaderDiscordBot.Services
 			{
 				await Log($"Maintenance determined: over 6 hours. Updating...");
 				var data = await DownloadData();
-				var modlist = JObject.Parse(data).SelectToken("modlist").ToObject<JArray>();
-
+				JObject jsonObject = JObject.Parse(data);
+				JArray modlist;
+				string modlist_compressed = (string)jsonObject["modlist_compressed"];
+				if (modlist_compressed != null)
+				{
+					byte[] compressedData = Convert.FromBase64String(modlist_compressed);
+					using (GZipStream zip = new GZipStream(new MemoryStream(compressedData), CompressionMode.Decompress))
+					using (var reader = new StreamReader(zip))
+						modlist = JArray.Parse(reader.ReadToEnd());
+				}
+				else
+				{
+					// Fallback if needed.
+					modlist = (JArray)jsonObject["modlist"];
+				}
 				foreach (var jtoken in modlist)
 				{
 					var name = jtoken.SelectToken("name").ToObject<string>().RemoveWhitespace();
+					if(jtoken["download"] == null)
+						jtoken["download"] = $"http://javid.ddns.net/tModLoader/download.php?Down=mods/{name}.tmod";
+					if (jtoken["modside"] == null)
+						jtoken["modside"] = "Both";
 					var jsonPath = Path.Combine(ModDir, $"{name}.json");
 					await FileUtils.FileWriteAsync(_semaphore, jsonPath, jtoken.ToString(Formatting.Indented));
 				}
