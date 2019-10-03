@@ -164,7 +164,13 @@ namespace tModloaderDiscordBot.Modules
 				{
 					string response = await client.DownloadStringTaskAsync("http://tmodloader.github.io/tModLoader/html/namespace_terraria_1_1_mod_loader.js");
 					response = string.Join("\n", response.Split("\n").Skip(1)).TrimEnd(';');
-					var result = JsonConvert.DeserializeObject<List<List<string>>>(response);
+					var resultObject = JsonConvert.DeserializeObject<List<List<object>>>(response);
+					var stringResultsOnly = resultObject.Where(x => x.All(y => y is string));
+					List<List<string>> result = new List<List<string>>();
+					foreach (var item in stringResultsOnly)
+					{
+						result.Add(new List<string>() { item[0] as string, item[1] as string, item[2] as string });
+					}
 					var r = result.Find(x => x[0].EqualsIgnoreCase(classNameLower));
 					if (r != null)
 					{
