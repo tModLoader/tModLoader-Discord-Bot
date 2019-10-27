@@ -269,6 +269,10 @@ namespace tModloaderDiscordBot.Modules
 					{
 						eb.ThumbnailUrl = value.ToString();
 					}
+					else if (name.EqualsIgnoreCase("modloaderversion"))
+					{
+						eb.AddField("tModLoader Version", value.ToString().Split(" ")[1], true);
+					}
 					else
 					{
 						eb.AddField(name.FirstCharToUpper(), value, true);
