@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using HtmlAgilityPack;
+using NCalc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -32,7 +33,7 @@ namespace tModloaderDiscordBot.Modules
 		public async Task Ping([Remainder] string _ = null)
 		{
 			string GetDeltaString(long elapsedTime, int latency) => $"\nMessage response time: `{elapsedTime} ms`" +
-																	$"\nDelta: `{Math.Abs(elapsedTime - latency)} ms`";
+																	$"\nDelta: `{System.Math.Abs(elapsedTime - latency)} ms`";
 
 			var clientLatency = Context.Client.Latency;
 			string baseString = $"Latency: `{clientLatency} ms`";
@@ -86,6 +87,16 @@ namespace tModloaderDiscordBot.Modules
 
 		}
 
+		[Command("math")]
+		[Summary("Executes math")]
+		[Remarks("math <math to execute>\nmath 5 * 10")]
+		public async Task Math([Remainder]string math)
+		{
+			Expression expression = new Expression(math);
+			var result = expression.Evaluate();
+			await ReplyAsync($"Executed Math Result: {result}");
+		}
+
 		[Command("wikis")]
 		[Alias("ws")]
 		[Summary("Generates a search for a term in tModLoader wiki")]
@@ -131,7 +142,7 @@ namespace tModloaderDiscordBot.Modules
 					await ReplyAsync($"Documentation for `{className}`: https://github.com/tModLoader/tModLoader/wiki/{className}-Class-Documentation");
 				else
 				{
-					if(!vanillaFields.TryGetValue(classNameLower, out var fields))
+					if (!vanillaFields.TryGetValue(classNameLower, out var fields))
 					{
 						fields = new HashSet<string>();
 						//using (var client = new WebClient())
