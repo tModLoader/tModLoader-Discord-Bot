@@ -108,6 +108,17 @@ namespace tModloaderDiscordBot.Modules
 			await ReplyAsync($"ExampleMod results for {searchTerm}: https://github.com/tModLoader/tModLoader/search?utf8=✓&q={encoded}+path:ExampleMod&type=Code");
 		}
 
+		[Command("ranksbysteamid")]
+		[Alias("ranksbyauthor", "listmods")]
+		[Summary("Generates a search for a term in tModLoader wiki")]
+		[Remarks("ranksbysteamid <steam64id>\ranksbysteamid 76561198422040054")]
+		public async Task RanksBySteamID([Remainder]string steamid64)
+		{
+			steamid64 = steamid64.Trim();
+			string encoded = WebUtility.UrlEncode(steamid64);
+			await ReplyAsync($"tModLoader ranks by steamid results for {steamid64}: <http://javid.ddns.net/tModLoader/tools/ranksbysteamid.php?steamid64={encoded}>");
+		}
+
 		// Current classes documented on the Wiki
 		static string[] vanillaClasses = new string[] { "item", "projectile", "tile", "npc" };
 		static Dictionary<string, HashSet<string>> vanillaFields = new Dictionary<string, HashSet<string>>();
@@ -131,7 +142,7 @@ namespace tModloaderDiscordBot.Modules
 					await ReplyAsync($"Documentation for `{className}`: https://github.com/tModLoader/tModLoader/wiki/{className}-Class-Documentation");
 				else
 				{
-					if(!vanillaFields.TryGetValue(classNameLower, out var fields))
+					if (!vanillaFields.TryGetValue(classNameLower, out var fields))
 					{
 						fields = new HashSet<string>();
 						//using (var client = new WebClient())
