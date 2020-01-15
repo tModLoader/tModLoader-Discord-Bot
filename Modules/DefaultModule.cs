@@ -110,7 +110,7 @@ namespace tModloaderDiscordBot.Modules
 
 		[Command("ranksbysteamid")]
 		[Alias("ranksbyauthor", "listmods")]
-		[Summary("Generates a search for a term in tModLoader wiki")]
+		[Summary("Generates a link for the ranksbysteamid of the steamid64 provided.")]
 		[Remarks("ranksbysteamid <steam64id>\ranksbysteamid 76561198422040054")]
 		public async Task RanksBySteamID([Remainder]string steamid64)
 		{
@@ -142,7 +142,7 @@ namespace tModloaderDiscordBot.Modules
 					await ReplyAsync($"Documentation for `{className}`: https://github.com/tModLoader/tModLoader/wiki/{className}-Class-Documentation");
 				else
 				{
-					if (!vanillaFields.TryGetValue(classNameLower, out var fields))
+					if(!vanillaFields.TryGetValue(classNameLower, out var fields))
 					{
 						fields = new HashSet<string>();
 						//using (var client = new WebClient())
