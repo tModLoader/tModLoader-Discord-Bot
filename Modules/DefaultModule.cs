@@ -115,8 +115,15 @@ namespace tModloaderDiscordBot.Modules
 		public async Task RanksBySteamID([Remainder]string steamid64)
 		{
 			steamid64 = steamid64.Trim();
-			string encoded = WebUtility.UrlEncode(steamid64);
-			await ReplyAsync($"tModLoader ranks by steamid results for {steamid64}: <http://javid.ddns.net/tModLoader/tools/ranksbysteamid.php?steamid64={encoded}>");
+			if (steamid64.Length == 17 && steamid64.All(c => c >= '0' && c <= '9'))
+			{
+				string encoded = WebUtility.UrlEncode(steamid64);
+				await ReplyAsync($"tModLoader ranks by steamid results for {steamid64}: <http://javid.ddns.net/tModLoader/tools/ranksbysteamid.php?steamid64={encoded}>");
+			}
+			else
+				await ReplyAsync($"\"{steamid64}\" is not a valid steamid64");
+
+			// Todo: allow users to register their username under a steamid64 and allow username to be used here.
 		}
 
 		// Current classes documented on the Wiki
@@ -142,7 +149,7 @@ namespace tModloaderDiscordBot.Modules
 					await ReplyAsync($"Documentation for `{className}`: https://github.com/tModLoader/tModLoader/wiki/{className}-Class-Documentation");
 				else
 				{
-					if(!vanillaFields.TryGetValue(classNameLower, out var fields))
+					if (!vanillaFields.TryGetValue(classNameLower, out var fields))
 					{
 						fields = new HashSet<string>();
 						//using (var client = new WebClient())

@@ -45,7 +45,7 @@ namespace tModloaderDiscordBot.Services
 
 		public async Task Initialize()
 		{
-			tMLVersion = "v0.11.5";
+			tMLVersion = "v0.11.6.2";
 			_semaphore = new SemaphoreSlim(1, 1);
 
 			//if (_updateTimer == null)
