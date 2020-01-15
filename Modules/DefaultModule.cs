@@ -108,6 +108,17 @@ namespace tModloaderDiscordBot.Modules
 			await ReplyAsync($"ExampleMod results for {searchTerm}: https://github.com/tModLoader/tModLoader/search?utf8=✓&q={encoded}+path:ExampleMod&type=Code");
 		}
 
+		[Command("ranksbysteamid")]
+		[Alias("ranksbyauthor", "listmods")]
+		[Summary("Generates a link for the ranksbysteamid of the steamid64 provided.")]
+		[Remarks("ranksbysteamid <steam64id>\ranksbysteamid 76561198422040054")]
+		public async Task RanksBySteamID([Remainder]string steamid64)
+		{
+			steamid64 = steamid64.Trim();
+			string encoded = WebUtility.UrlEncode(steamid64);
+			await ReplyAsync($"tModLoader ranks by steamid results for {steamid64}: <http://javid.ddns.net/tModLoader/tools/ranksbysteamid.php?steamid64={encoded}>");
+		}
+
 		// Current classes documented on the Wiki
 		static string[] vanillaClasses = new string[] { "item", "projectile", "tile", "npc" };
 		static Dictionary<string, HashSet<string>> vanillaFields = new Dictionary<string, HashSet<string>>();
