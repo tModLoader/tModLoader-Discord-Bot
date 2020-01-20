@@ -17,6 +17,18 @@ namespace tModloaderDiscordBot.Services
 	{
 		private static readonly Regex _HasteKeyRegex = new Regex(@"{""key"":""(?<key>[a-z].*)""}", RegexOptions.Compiled);
 
+		private readonly string[] CodeBlockTypes = new string[]
+		{
+			"html",
+			"css",
+			"cs",
+			"dns",
+			"python",
+			"lua",
+			"http",
+			"markdown",
+		};
+
 		private readonly DiscordSocketClient _client;
 		private readonly LoggingService _loggingService;
 
@@ -89,6 +101,15 @@ namespace tModloaderDiscordBot.Services
 			if(shouldHastebin)
 			{
 				string hastebinContent = contents.Trim('`');
+				for (int i = 0; i < CodeBlockTypes.Length; i++)
+				{
+					string keyword = CodeBlockTypes[i];
+					if (hastebinContent.StartsWith(keyword + "\n"))
+					{
+						hastebinContent = hastebinContent.Substring(keyword.Length).TrimStart('\n');
+						break;
+					}
+				}
 
 				//var msg = await context.Channel.SendMessageAsync("Auto Hastebin in progress");
 				using (var client = new HttpClient())
