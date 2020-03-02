@@ -224,7 +224,7 @@ namespace tModloaderDiscordBot.Modules
 			var msg = await ReplyAsync(WriteTag(tag, Context.Guild.GetUser(tag.OwnerId).FullName()));
 
 			await msg.AddReactionAsync(new Emoji("❌"));
-			DeleteableTags.Add(msg.Id, new Tuple<ulong, ulong>(id, Context.Message.Id));
+			DeleteableTags.Add(msg.Id, new Tuple<ulong, ulong>(Context.Message.Author.Id, Context.Message.Id));
 		}
 
 		internal static string WriteTag(GuildTag tag, string ownerName)

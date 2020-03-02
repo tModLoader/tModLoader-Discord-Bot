@@ -104,7 +104,7 @@ namespace tModloaderDiscordBot.Services
 													   $"\n{tag.Value}");
 
 						await msg.AddReactionAsync(new Emoji("❌"));
-						Modules.TagModule.DeleteableTags.Add(msg.Id, new Tuple<ulong, ulong>(context.User.Id, context.Message.Id));
+						Modules.TagModule.DeleteableTags.Add(msg.Id, new Tuple<ulong, ulong>(message.Author.Id, context.Message.Id));
 
 						_userHandlerService.AddBasicBotCooldown(message.Author.Id);
 						return new ExecuteResult();
