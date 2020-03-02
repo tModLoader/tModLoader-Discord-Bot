@@ -18,7 +18,7 @@ namespace tModloaderDiscordBot.Modules
 	[Group("tag")]
 	public class TagModule : ConfigModuleBase
 	{
-		private readonly Dictionary<ulong, Tuple<ulong, ulong>> DeleteableTags = new Dictionary<ulong, Tuple<ulong, ulong>>(); // bot message id, <requester user id, original request message>
+		internal static readonly Dictionary<ulong, Tuple<ulong, ulong>> DeleteableTags = new Dictionary<ulong, Tuple<ulong, ulong>>(); // bot message id, <requester user id, original request message>
 
 		public TagModule(IServiceProvider services)
 		{
