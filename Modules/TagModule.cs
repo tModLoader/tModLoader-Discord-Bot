@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
 using tModloaderDiscordBot.Components;
 using tModloaderDiscordBot.Preconditions;
 using tModloaderDiscordBot.Services;
@@ -17,6 +18,15 @@ namespace tModloaderDiscordBot.Modules
 	[Group("tag")]
 	public class TagModule : ConfigModuleBase
 	{
+		private readonly Dictionary<ulong, Tuple<ulong, ulong>> DeleteableTags = new Dictionary<ulong, Tuple<ulong, ulong>>(); // bot message id, <requester user id, original request message>
+
+		public TagModule(IServiceProvider services)
+		{
+			var _client = services.GetRequiredService<DiscordSocketClient>();
+
+			_client.ReactionAdded += HandleReactionAdded;
+		}
+
 		public GuildTagService TagService { get; set; }
 
 		protected override void BeforeExecute(CommandInfo command)
@@ -211,7 +221,10 @@ namespace tModloaderDiscordBot.Modules
 			}
 
 			var tag = TagService.GetTag(id, key);
-			await ReplyAsync(WriteTag(tag, Context.Guild.GetUser(tag.OwnerId).FullName()));
+			var msg = await ReplyAsync(WriteTag(tag, Context.Guild.GetUser(tag.OwnerId).FullName()));
+
+			await msg.AddReactionAsync(new Emoji("❌"));
+			DeleteableTags.Add(msg.Id, new Tuple<ulong, ulong>(id, Context.Message.Id));
 		}
 
 		internal static string WriteTag(GuildTag tag, string ownerName)
@@ -271,6 +284,25 @@ namespace tModloaderDiscordBot.Modules
 				tag.IsGlobal = toggle;
 				await Config.Update();
 				await ReplyAsync($"Tag `{key}` owned by {id} is {(toggle ? "now global" : "no longer global")}.");
+			}
+		}
+
+		private async Task HandleReactionAdded(Cacheable<IUserMessage, ulong> message, ISocketMessageChannel channel, SocketReaction reaction)
+		{
+			bool delete = false;
+			if (DeleteableTags.TryGetValue(message.Id, out Tuple<ulong, ulong> originalMessageAuthorAndMessage) && reaction.User.Value is SocketGuildUser reactionUser)
+			{
+				if(originalMessageAuthorAndMessage.Item1 == reactionUser.Id && reaction.Emote.Equals(new Emoji("❌")))
+				{
+					delete = true;
+				}
+			}
+
+			if (delete)
+			{
+				DeleteableTags.Remove(message.Id);
+				await (await channel.GetMessageAsync(originalMessageAuthorAndMessage.Item2)).DeleteAsync();
+				await (await message.GetOrDownloadAsync()).DeleteAsync();
 			}
 		}
 	}
