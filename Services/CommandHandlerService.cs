@@ -38,7 +38,7 @@ namespace tModloaderDiscordBot.Services
 
 		public async Task InitializeAsync()
 		{
-			await _commandService.AddModulesAsync(Assembly.GetEntryAssembly());
+			await _commandService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
 		}
 
 		private async Task HandleCommand(SocketMessage socketMessage)
