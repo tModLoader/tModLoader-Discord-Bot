@@ -67,7 +67,8 @@ namespace tModloaderDiscordBot.Services
 						continue;
 
 					var originalUser = _client.GetUser(embedAuthorParts[0], embedAuthorParts[1]);
-					TrackedMessages[recentMessage.Id] = new TrackedMessage(originalUser.Id, recentMessage.Timestamp);
+					if(originalUser != null)
+						TrackedMessages[recentMessage.Id] = new TrackedMessage(originalUser.Id, recentMessage.Timestamp);
 				}
 				await _loggingService.Log(new LogMessage(LogSeverity.Info, "Recruitment", $"{TrackedMessages.Count()} messages restored from #recruitment "));
 
