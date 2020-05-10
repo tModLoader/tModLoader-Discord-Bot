@@ -105,7 +105,7 @@ namespace tModloaderDiscordBot.Modules
 		{
 			searchTerm = searchTerm.Trim();
 			string encoded = System.Net.WebUtility.UrlEncode(searchTerm);
-			await ReplyAsync($"ExampleMod results for {searchTerm}: https://github.com/tModLoader/tModLoader/search?utf8=✓&q={encoded}+path:ExampleMod&type=Code");
+			await ReplyAsync($"ExampleMod results for {searchTerm}: <https://github.com/tModLoader/tModLoader/search?utf8=✓&q={encoded}+path:ExampleMod&type=Code>");
 		}
 
 		[Command("ranksbysteamid")]
@@ -146,7 +146,7 @@ namespace tModloaderDiscordBot.Modules
 			if (vanillaClasses.Contains(classNameLower))
 			{
 				if (methodName == "")
-					await ReplyAsync($"Documentation for `{className}`: https://github.com/tModLoader/tModLoader/wiki/{className}-Class-Documentation");
+					await ReplyAsync($"Documentation for `{className}`: <https://github.com/tModLoader/tModLoader/wiki/{className}-Class-Documentation>");
 				else
 				{
 					if (!vanillaFields.TryGetValue(classNameLower, out var fields))
@@ -154,9 +154,9 @@ namespace tModloaderDiscordBot.Modules
 						fields = new HashSet<string>();
 						//using (var client = new WebClient())
 						//{
-						//string response = await client.DownloadStringTaskAsync($"https://github.com/tModLoader/tModLoader/wiki/{className}-Class-Documentation");
+						//string response = await client.DownloadStringTaskAsync($ <https://github.com/tModLoader/tModLoader/wiki/{className}-Class-Documentation>");
 						HtmlWeb hw = new HtmlWeb();
-						HtmlDocument doc = await hw.LoadFromWebAsync($"https://github.com/tModLoader/tModLoader/wiki/{className}-Class-Documentation");
+						HtmlDocument doc = await hw.LoadFromWebAsync($ <https://github.com/tModLoader/tModLoader/wiki/{className}-Class-Documentation>");
 						foreach (HtmlNode link in doc.DocumentNode.SelectNodes("//a[@href]"))
 						{
 							HtmlAttribute att = link.Attributes["href"];
@@ -168,7 +168,7 @@ namespace tModloaderDiscordBot.Modules
 						vanillaFields[classNameLower] = fields;
 					}
 					if (fields.Contains(methodNameLower))
-						await ReplyAsync($"Documentation for `{className}.{methodName}`: https://github.com/tModLoader/tModLoader/wiki/{className}-Class-Documentation#{methodNameLower}");
+						await ReplyAsync($"Documentation for `{className}.{methodName}`: <https://github.com/tModLoader/tModLoader/wiki/{className}-Class-Documentation#{methodNameLower}>");
 					else
 						await ReplyAsync($"Documentation for `{className}.{methodName}` not found");
 				}
