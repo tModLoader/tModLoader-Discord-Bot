@@ -224,6 +224,7 @@ namespace tModloaderDiscordBot.Modules
 			var msg = await ReplyAsync(WriteTag(tag, Context.Guild.GetUser(tag.OwnerId).FullName()));
 
 			await msg.AddReactionAsync(new Emoji("❌"));
+			await Context.Message.DeleteAsync();
 			DeleteableTags.Add(msg.Id, new Tuple<ulong, ulong>(Context.Message.Author.Id, Context.Message.Id));
 		}
 
@@ -301,7 +302,11 @@ namespace tModloaderDiscordBot.Modules
 			if (delete)
 			{
 				DeleteableTags.Remove(message.Id);
-				await (await channel.GetMessageAsync(originalMessageAuthorAndMessage.Item2)).DeleteAsync();
+				/* Not working, but it shouldn't matter, they should already be deleted.
+				IMessage originalTagRequestMessage = await channel.GetMessageAsync(originalMessageAuthorAndMessage.Item2);
+				if(originalTagRequestMessage!= null)
+					await originalTagRequestMessage.DeleteAsync();
+				*/
 				await (await message.GetOrDownloadAsync()).DeleteAsync();
 			}
 		}
