@@ -125,7 +125,7 @@ namespace tModloaderDiscordBot.Utils
 			}
 		}
 		public static string FullName(this IUser user)
-			=> $"{user.Username}#{user.Discriminator}";
+			=> user == null ? "Unknown User" : $"{user.Username}#{user.Discriminator}";
 
 		public static string PrettyPrintTimespan(TimeSpan span)
 		{
