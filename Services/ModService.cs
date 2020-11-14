@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -45,7 +46,11 @@ namespace tModloaderDiscordBot.Services
 
 		public async Task Initialize()
 		{
-			tMLVersion = "v0.11.7.7";
+			var client = new WebClient();
+			//The Github api expects at least more than 5 letters here, change it to whatever you want
+			client.Headers.Add("user-agent", "Discord.Net");
+			
+			tMLVersion = JObject.Parse(client.DownloadString(@"https://api.github.com/repos/tModLoader/tModLoader/releases/latest")).GetValue("tag_name").ToString();
 			_semaphore = new SemaphoreSlim(1, 1);
 
 			//if (_updateTimer == null)
