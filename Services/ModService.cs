@@ -24,6 +24,7 @@ namespace tModloaderDiscordBot.Services
 		internal const string HomepageUrl = "http://javid.ddns.net/tModLoader/moddescription.php";
 		internal const string PopularUrl = "http://javid.ddns.net/tModLoader/tools/populartop10.php";
 		internal const string HotUrl = "http://javid.ddns.net/tModLoader/tools/hottop10.php";
+		internal const string NewestReleaseUrl = "https://api.github.com/repos/tModLoader/tModLoader/releases/latest";
 
 		private static string ModDir => "mods";
 		internal static string tMLVersion;
@@ -50,7 +51,7 @@ namespace tModloaderDiscordBot.Services
 			//The Github api expects at least more than 5 letters here, change it to whatever you want
 			client.Headers.Add("user-agent", "Discord.Net");
 			
-			tMLVersion = JObject.Parse(client.DownloadString(@"https://api.github.com/repos/tModLoader/tModLoader/releases/latest")).GetValue("tag_name").ToString();
+			tMLVersion = JObject.Parse(client.DownloadString(NewestReleaseUrl)).GetValue("tag_name").ToString();
 			_semaphore = new SemaphoreSlim(1, 1);
 
 			//if (_updateTimer == null)
