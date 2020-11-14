@@ -52,6 +52,7 @@ namespace tModloaderDiscordBot.Services
 			client.Headers.Add("user-agent", "Discord.Net");
 			
 			tMLVersion = JObject.Parse(client.DownloadString(NewestReleaseUrl)).GetValue("tag_name").ToString();
+			client.Dispose();
 			_semaphore = new SemaphoreSlim(1, 1);
 
 			//if (_updateTimer == null)
