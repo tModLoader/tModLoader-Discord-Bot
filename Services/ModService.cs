@@ -47,12 +47,11 @@ namespace tModloaderDiscordBot.Services
 
 		public async Task Initialize()
 		{
-			var client = new WebClient();
+			using var client = new WebClient();
 			//The Github api expects at least more than 5 letters here, change it to whatever you want
 			client.Headers.Add("user-agent", "Discord.Net");
 			
 			tMLVersion = $"tModLoader {JObject.Parse(client.DownloadString(NewestReleaseUrl)).GetValue("tag_name")}";
-			client.Dispose();
 			_semaphore = new SemaphoreSlim(1, 1);
 
 			//if (_updateTimer == null)
