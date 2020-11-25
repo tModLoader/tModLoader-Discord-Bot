@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -23,6 +24,7 @@ namespace tModloaderDiscordBot.Services
 		internal const string HomepageUrl = "http://javid.ddns.net/tModLoader/moddescription.php";
 		internal const string PopularUrl = "http://javid.ddns.net/tModLoader/tools/populartop10.php";
 		internal const string HotUrl = "http://javid.ddns.net/tModLoader/tools/hottop10.php";
+		internal const string NewestReleaseUrl = "https://api.github.com/repos/tModLoader/tModLoader/releases/latest";
 
 		private static string ModDir => "mods";
 		internal static string tMLVersion;
@@ -45,7 +47,11 @@ namespace tModloaderDiscordBot.Services
 
 		public async Task Initialize()
 		{
-			tMLVersion = "v0.11.7.7";
+			using var client = new WebClient();
+			//The Github api expects at least more than 5 letters here, change it to whatever you want
+			client.Headers.Add("user-agent", "Discord.Net");
+			
+			tMLVersion = $"tModLoader {JObject.Parse(client.DownloadString(NewestReleaseUrl)).GetValue("tag_name")}";
 			_semaphore = new SemaphoreSlim(1, 1);
 
 			//if (_updateTimer == null)
