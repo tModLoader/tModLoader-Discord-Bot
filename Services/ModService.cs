@@ -17,7 +17,7 @@ namespace tModloaderDiscordBot.Services
 	{
 		internal const string QueryDownloadUrl = "http://javid.ddns.net/tModLoader/tools/querymoddownloadurl.php?modname=";
 		internal const string QueryHomepageUrl = "http://javid.ddns.net/tModLoader/tools/querymodhomepage.php?modname=";
-		internal const string WidgetUrl = "https://bettermodwidget.projectagon.repl.co/?mod=";
+		internal const string WidgetUrl = "https://bettermodwidget.javidpack.repl.co/?mod=";
 		internal const string XmlUrl = "http://javid.ddns.net/tModLoader/listmods.php";
 		internal const string ModInfoUrl = "http://javid.ddns.net/tModLoader/tools/modinfo.php";
 		internal const string HomepageUrl = "http://javid.ddns.net/tModLoader/moddescription.php";
