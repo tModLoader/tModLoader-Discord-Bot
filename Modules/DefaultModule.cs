@@ -74,7 +74,7 @@ namespace tModloaderDiscordBot.Modules
 
 					using (var client = new System.Net.Http.HttpClient())
 					{
-						var response = await client.GetByteArrayAsync($"{ModService.WidgetUrl}{modFound}.png");
+						var response = await client.GetByteArrayAsync($"{ModService.WidgetUrl}{modFound}");
 						using (var stream = new MemoryStream(response))
 						{
 							await Context.Channel.SendFileAsync(stream, $"widget-{modFound}.png");
