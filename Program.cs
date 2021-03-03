@@ -34,6 +34,7 @@ namespace tModloaderDiscordBot
 						.AddSingleton<CommandHandlerService>()
 						.AddSingleton<HastebinService>()
 						.AddSingleton<RecruitmentChannelService>()
+						.AddSingleton<BanAppealChannelService>()
 						//.AddSingleton<ReactionRoleService>()
 						.AddSingleton(new ResourceManager("tModloaderDiscordBot.Properties.Resources", GetType().Assembly))
 						.AddSingleton<LoggingService>()
@@ -140,6 +141,7 @@ namespace tModloaderDiscordBot
 		private async Task ClientGuildAvailable(SocketGuild arg)
 		{
 			await _services.GetRequiredService<RecruitmentChannelService>().SetupAsync();
+			_services.GetRequiredService<BanAppealChannelService>().Setup();
 			return;
 		}
 	}
