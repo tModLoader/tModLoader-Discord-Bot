@@ -116,7 +116,7 @@ namespace tModloaderDiscordBot.Services
 				{
 					HttpContent content = new StringContent(hastebinContent);
 
-					var response = await client.PostAsync("https://paste.mod.gg/documents", content);
+					var response = await client.PostAsync("https://hastebin.com/documents", content);
 					string resultContent = await response.Content.ReadAsStringAsync();
 
 					var match = _HasteKeyRegex.Match(resultContent);
@@ -127,7 +127,7 @@ namespace tModloaderDiscordBot.Services
 						return;
 					}
 
-					string hasteUrl = $"https://paste.mod.gg/{match.Groups["key"]}.cs";
+					string hasteUrl = $"https://hastebin.com/{match.Groups["key"]}.cs";
 					await context.Channel.SendMessageAsync($"Automatic Hastebin for {message.Author.Username}{extra}: {hasteUrl}");
 					if(autoDeleteUserMessage)
 						await message.DeleteAsync();
