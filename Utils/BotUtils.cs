@@ -75,7 +75,7 @@ namespace tModloaderDiscordBot.Utils
 		}
 
 		public static string PrettyPrint(this IEnumerable<string> list) =>
-			string.Join(", ", list.Select(v => $"``{v}``"));
+			string.Join(", ", list.Select(v => $"`{v}`"));
 
 		public static string SurroundWith(this string text, string surrounder) =>
 			$"{surrounder}{text}{surrounder}";
