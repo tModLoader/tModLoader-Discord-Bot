@@ -68,7 +68,7 @@ namespace tModloaderDiscordBot.Services
 			var attachents = message.Attachments;
 			if(attachents.Count == 1 && attachents.ElementAt(0) is Attachment attachment)
 			{
-				if (attachment.Filename.EndsWith(".log") || attachment.Filename.EndsWith(".cs") && attachment.Size < 100000)
+				if (attachment.Filename.EndsWith(".log") || attachment.Filename.EndsWith(".cs") || attachment.Filename.EndsWith(".json") && attachment.Size < 100000)
 				{
 					using (var client = new HttpClient())
 						contents = await client.GetStringAsync(attachment.Url);
