@@ -33,7 +33,7 @@ namespace tModloaderDiscordBot.Services
 		{
 			_updateCacheTimer = new Timer((e) =>
 			{
-				foreach (var config in _guildConfigService.GetAllConfigs())
+				foreach (var config in _guildConfigService.GetAllConfigs().ToList())
 				{
 					foreach (var status in config.SiteStatuses)
 					{
