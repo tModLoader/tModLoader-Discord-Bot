@@ -237,17 +237,6 @@ namespace tModloaderDiscordBot.Modules
 				}
 			}
 		}
-		
-		[Command("microsoftdocs")]
-		[Alias("msdn", "microsoft")]
-		[Summary("Generates a search for the Microsoft documentation")]
-		[Remarks("microsoftdocs <search term>\microsoftdocs Int16")]
-		public async Task MicrosoftDocSearch([Remainder]string searchTerm)
-		{
-			searchTerm = searchTerm.Trim();
-			string encoded = System.Net.WebUtility.UrlEncode(searchTerm);
-			await ReplyAsync($"Microsoft Documentation results for {searchTerm}: <https://docs.microsoft.com/en-us/search/?scope=.NET&terms={encoded}>");
-		}
 
 		[Command("mod")]
 		[Alias("modinfo")]
