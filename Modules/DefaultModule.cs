@@ -108,6 +108,17 @@ namespace tModloaderDiscordBot.Modules
 			await ReplyAsync($"ExampleMod results for {searchTerm}: <https://github.com/tModLoader/tModLoader/search?utf8=✓&q={encoded}+path:ExampleMod&type=Code>");
 		}
 
+		[Command("microsoftdocs")]
+		[Alias("msdn", "microsoft")]
+		[Summary("Generates a search for a term in Microsoft documentation.")]
+		[Remarks("msdn <search term>\nmicrosoft Int16")]
+		public async Task MsdnSearch([Remainder]string searchTerm)
+		{
+			searchTerm = searchTerm.Trim();
+			var encoded = WebUtility.UrlEncode(searchTerm);
+			await ReplyAsync($"Microsoft docs for {searchTerm}: <https://docs.microsoft.com/en-us/search/?scope=.NET&terms={encoded}>");
+		}
+
 		[Command("ranksbysteamid")]
 		[Alias("ranksbyauthor", "listmods")]
 		[Summary("Generates a link for the ranksbysteamid of the steamid64 provided.")]
