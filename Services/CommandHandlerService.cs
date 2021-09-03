@@ -63,26 +63,28 @@ namespace tModloaderDiscordBot.Services
 			{
 				var user = message.Author as SocketGuildUser;
 				var guild = (message.Channel as SocketTextChannel)?.Guild;
-				
-				if (guild != null)
-				{
-					// everyone role - 313844578459582464
-					// here role - 309078916738580480
-					// someone role - 437230598281625620
+
+				// tml team role - 103114761213837312
+				// mod role - 212345985576337408
+				if (user?.Roles.Any(role => role.Id == 103114761213837312 || role.Id == 212345985576337408) != false || guild == null)
+					return;
+
+				// everyone role - 313844578459582464
+				// here role - 309078916738580480
+				// someone role - 437230598281625620
 #if TESTBOT
-					var roles = guild.Roles.Where(role => 
-						role.Id == 635699572936671243).Cast<IRole>();
+				var roles = guild.Roles.Where(role =>
+					role.Id == 635699572936671243).Cast<IRole>();
 #else
 					var roles = guild.Roles.Where(role => 
 						role.Id == 313844578459582464 || 
 						role.Id == 309078916738580480 || 
 						role.Id == someoneRoleId).Cast<IRole>();
 #endif
-					// ReSharper disable once PossibleNullReferenceException
-					await user?.AddRolesAsync(roles);
-				}
+				// ReSharper disable once PossibleNullReferenceException
+				await user.AddRolesAsync(roles);
 			}
-			
+
 			// Message starts with prefix
 			int argPos = 0;
 			if (message.Content.EqualsIgnoreCase(".")
