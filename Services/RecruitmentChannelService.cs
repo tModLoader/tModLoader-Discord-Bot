@@ -94,7 +94,7 @@ namespace tModloaderDiscordBot.Services
 				return;
 
 			string emoteName = reaction.Emote.Name;
-			if (emoteName != "📡")
+			if (emoteName != "📡" && emoteName != "❌") 
 				return;
 
 			if (!(reaction.User.Value is IGuildUser reactionAuthor))
@@ -113,6 +113,13 @@ namespace tModloaderDiscordBot.Services
 				if (reactionAuthor.Id != trackedMessage.originalAuthor)
 					return;
 
+				if (emoteName == "❌")
+				{
+					await message.DeleteAsync();
+					TrackedMessages.Remove(message.Id);
+					return;
+				}
+				
 				// Check time to throttle bumping interval
 				if (trackedMessage.lastRefresh.AddDays(1) > DateTimeOffset.UtcNow)
 				{
@@ -154,6 +161,7 @@ namespace tModloaderDiscordBot.Services
 					.Build();
 				var botMessage = await recruitmentChannel.SendMessageAsync("", embed: embed);
 				await botMessage.AddReactionAsync(new Emoji("📡"));
+				await botMessage.AddReactionAsync(new Emoji("❌"));
 
 				TrackedMessages[botMessage.Id] = new TrackedMessage(message.Author.Id, botMessage.Timestamp);
 			}
