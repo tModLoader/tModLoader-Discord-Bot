@@ -54,7 +54,35 @@ namespace tModloaderDiscordBot.Services
 				return;
 
 			var context = new SocketCommandContext(_client, message);
-
+#if TESTBOT
+			const ulong someoneRoleId = 635699572936671243;
+#else
+			const ulong someoneRoleId = 437230598281625620;
+#endif
+			if (message.MentionedEveryone || message.MentionedRoles.Any(role => role.Id == someoneRoleId))
+			{
+				var user = message.Author as SocketGuildUser;
+				var guild = (message.Channel as SocketTextChannel)?.Guild;
+				
+				if (guild != null)
+				{
+					// everyone role - 313844578459582464
+					// here role - 309078916738580480
+					// someone role - 437230598281625620
+#if TESTBOT
+					var roles = guild.Roles.Where(role => 
+						role.Id == 635699572936671243).Cast<IRole>();
+#else
+					var roles = guild.Roles.Where(role => 
+						role.Id == 313844578459582464 || 
+						role.Id == 309078916738580480 || 
+						role.Id == someoneRoleId).Cast<IRole>();
+#endif
+					// ReSharper disable once PossibleNullReferenceException
+					await user?.AddRolesAsync(roles);
+				}
+			}
+			
 			// Message starts with prefix
 			int argPos = 0;
 			if (message.Content.EqualsIgnoreCase(".")
