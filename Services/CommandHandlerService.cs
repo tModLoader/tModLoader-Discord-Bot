@@ -76,10 +76,10 @@ namespace tModloaderDiscordBot.Services
 				var roles = guild.Roles.Where(role =>
 					role.Id == 635699572936671243).Cast<IRole>();
 #else
-					var roles = guild.Roles.Where(role => 
-						role.Id == 313844578459582464 || 
-						role.Id == 309078916738580480 || 
-						role.Id == someoneRoleId).Cast<IRole>();
+				var roles = guild.Roles.Where(role => 
+					role.Id == 313844578459582464 || 
+					role.Id == 309078916738580480 || 
+					role.Id == someoneRoleId).Cast<IRole>();
 #endif
 				// ReSharper disable once PossibleNullReferenceException
 				await user.AddRolesAsync(roles);
