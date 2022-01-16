@@ -23,6 +23,14 @@ Our bot also features the following:
 # Exemplary
 For sure this bot can be used as guidance on how to make a Discord bot, as well as how to utilize various Discord.Net features. However, keep in mind the license. Feel free to learn from this bot, but please do not blatantly copy-paste this code.
 
+# Testing
+
+To test the bot, you'll need a to provide the program with valid credentials. You'll need to test the bot on your own server. To do this, first visit the [Discord Developer Portal](https://discord.com/developers/applications) and click `New Application`. Provide your bot with a name, then click `Create`. Something like "My-tModLoader-bot" will work fine. Now, click `Bot` on the left, then click `Add Bot`, then click `Yes, do it!`. You'll now need to click the `Copy` button in the `Token` section. Next, we'll need to provide those credentials to our program. To do this, in the visual studio solution explorer, right click on `tModLoaderDiscordBot` and click `Properties`. In the window that appears, click `Debug`. Now, click the `Add` button in the `Environment variables` section. Type in `TestBotToken` for the name and paste in your copied bot token into the value column. 
+
+Next, we need to invite the bot to a server you have admin permissions in. Follow the instructions in [here](https://github.com/jagrosh/MusicBot/wiki/Adding-Your-Bot-To-Your-Server), except before clicking `copy` first click `Administrator` in the `Bot Permissions` section that appeared.
+
+Now, the bot is registered to the server and the bot credentials are in the project. Now, make sure the solution configuration is set to `Debug - Test Bot` and you are good to debug. When you debug, you should see the bot appear in your server after it has finished initalizing, once that is done you can test your code as usual.
+
 # License
 The default license is 'all-rights reserved'. This means, all rights to this work are reserved to its author(s). In this case, that's me, Jofairden. I made this bot, it is my code. The fact that it is open-source does not mean you can take my code and claim it as your own. Again, feel free to learn from it, but please be so polite to not steal it.
 
