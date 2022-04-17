@@ -51,7 +51,10 @@ namespace tModloaderDiscordBot.Services
 			//The Github api expects at least more than 5 letters here, change it to whatever you want
 			client.Headers.Add("user-agent", "Discord.Net");
 			
+			/* This not working anymore with 1.4 alphas making releases.
 			tMLVersion = $"tModLoader {JObject.Parse(client.DownloadString(NewestReleaseUrl)).GetValue("tag_name")}";
+			*/
+			tMLVersion = $"tModLoader v0.11.8.8";
 			_semaphore = new SemaphoreSlim(1, 1);
 
 			//if (_updateTimer == null)
