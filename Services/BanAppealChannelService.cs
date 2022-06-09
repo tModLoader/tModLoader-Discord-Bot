@@ -15,6 +15,12 @@ namespace tModloaderDiscordBot.Services
 		private SocketRole banAppealRole;
 		internal ITextChannel banAppealChannel;
 
+#if TESTBOT
+		private const ulong banAppealChannelId = 816493360722083851;
+#else
+		private const ulong banAppealChannelId = 331867286312845313;
+#endif
+
 		public BanAppealChannelService(IServiceProvider services) : base(services)
 		{
 			_client = services.GetRequiredService<DiscordSocketClient>();
@@ -23,13 +29,8 @@ namespace tModloaderDiscordBot.Services
 
 		internal void Setup()
 		{
-#if TESTBOT
-			banAppealChannel = (ITextChannel)_client.GetChannel(816493360722083851);
-			banAppealRoleName = "banrole";
-#else
-			banAppealChannel = (ITextChannel)_client.GetChannel(331867286312845313);
+			banAppealChannel = (ITextChannel)_client.GetChannel(banAppealChannelId);
 			banAppealRoleName = "BEGONE, EVIL!";
-#endif
 			banAppealRole = banAppealChannel.Guild.Roles.FirstOrDefault(x => x.Name == banAppealRoleName) as SocketRole;
 		}
 

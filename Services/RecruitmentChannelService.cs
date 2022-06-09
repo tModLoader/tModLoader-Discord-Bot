@@ -10,6 +10,12 @@ namespace tModloaderDiscordBot.Services
 {
 	public class RecruitmentChannelService : BaseService
 	{
+#if TESTBOT
+		private const ulong recruitmentChannelId = 556634834093473793;
+#else
+		private const ulong recruitmentChannelId = 693622571018485830;
+#endif
+
 		internal class TrackedMessage
 		{
 			internal ulong originalAuthor;
@@ -35,11 +41,8 @@ namespace tModloaderDiscordBot.Services
 
 		internal async Task SetupAsync()
 		{
-#if TESTBOT
-			recruitmentChannel = (ITextChannel)_client.GetChannel(556634834093473793);
-#else
-			recruitmentChannel = (ITextChannel)_client.GetChannel(693622571018485830);
-#endif
+			recruitmentChannel = (ITextChannel)_client.GetChannel(recruitmentChannelId);
+
 			await _loggingService.Log(new LogMessage(LogSeverity.Info, "Recruitment", $"Looking for Recruitment channel"));
 			if (recruitmentChannel != null)
 			{
@@ -84,7 +87,7 @@ namespace tModloaderDiscordBot.Services
 				*/
 			}
 		}
-
+		
 		private async Task HandleReactionAdded(Cacheable<IUserMessage, ulong> cacheableMessage, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
 		{
 			if (recruitmentChannel == null)
