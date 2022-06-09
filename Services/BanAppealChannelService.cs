@@ -34,6 +34,7 @@ namespace tModloaderDiscordBot.Services
 				isSetup = await Task.Run(() =>
 				{
 					banAppealChannel = (ITextChannel)_client.GetChannel(banAppealChannelId);
+					// TODO Make this configurable
 					banAppealRoleName = "BEGONE, EVIL!";
 					banAppealRole = banAppealChannel.Guild.Roles.FirstOrDefault(x => x.Name == banAppealRoleName) as SocketRole;
 					return true;
@@ -46,9 +47,9 @@ namespace tModloaderDiscordBot.Services
 			if (!await Setup())
 				return;
 
-			await before.GetOrDownloadAsync().ContinueWith(async _ =>
+			await before.GetOrDownloadAsync().ContinueWith(async task =>
 			{
-				if (after.Roles.Contains(banAppealRole) && !before.Value.Roles.Contains(banAppealRole))
+				if (after.Roles.Contains(banAppealRole) && !task.Result.Roles.Contains(banAppealRole))
 				{
 					var embed = new EmbedBuilder()
 					.WithColor(Color.Blue)

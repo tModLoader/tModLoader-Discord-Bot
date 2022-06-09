@@ -45,7 +45,7 @@ namespace tModloaderDiscordBot.Services
 			_client = client;
 		}
 
-		public async Task Initialize()
+		public ModService Initialize()
 		{
 			using var client = new WebClient();
 			//The Github api expects at least more than 5 letters here, change it to whatever you want
@@ -66,6 +66,7 @@ namespace tModloaderDiscordBot.Services
 			//	},
 			//	null, TimeSpan.FromHours(6), TimeSpan.FromHours(6));
 			//}
+			return this;
 		}
 
 		public async Task Maintain(IDiscordClient client)

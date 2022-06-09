@@ -13,7 +13,7 @@ using tModloaderDiscordBot.Utils;
 
 namespace tModloaderDiscordBot.Services
 {
-	class HastebinService
+	class HastebinService : BaseService
 	{
 		private static readonly Regex _HasteKeyRegex = new Regex(@"{""key"":""(?<key>[a-z].*)""}", RegexOptions.Compiled);
 
@@ -30,19 +30,11 @@ namespace tModloaderDiscordBot.Services
 		};
 
 		private readonly DiscordSocketClient _client;
-		private readonly LoggingService _loggingService;
 
-		public HastebinService(IServiceProvider services)
+		public HastebinService(IServiceProvider services) : base(services)
 		{
-			_loggingService = services.GetRequiredService<LoggingService>();
 			_client = services.GetRequiredService<DiscordSocketClient>();
-
 			_client.MessageReceived += HandleCommand;
-		}
-
-		~HastebinService()
-		{
-			_client.MessageReceived -= HandleCommand;
 		}
 
 		// TODO: Autohastebin .cs or .txt file attachments.

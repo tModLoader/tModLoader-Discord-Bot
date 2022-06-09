@@ -11,6 +11,8 @@ namespace tModloaderDiscordBot
 {
 	public class Program
 	{
+		public static bool Ready;
+
 		public static void Main(string[] args)
 			=> new Program().StartAsync().GetAwaiter().GetResult();
 
@@ -19,15 +21,13 @@ namespace tModloaderDiscordBot
 		private DiscordSocketClient _client;
 		private IServiceProvider _services;
 		private LoggingService _loggingService;
-		private ModService _modService;
 		//private ReactionRoleService _reactionRoleService;
 
 		private async Task StartAsync()
 		{
-			IServiceCollection BuildServiceCollection()
+			IServiceProvider BuildServiceProvider()
 			{
-				var serviceCollection =
-					new ServiceCollection()
+				return new ServiceCollection()
 						.AddSingleton(_client)
 						.AddSingleton(_commandService)
 						.AddSingleton<UserHandlerService>()
@@ -36,64 +36,59 @@ namespace tModloaderDiscordBot
 						.AddSingleton<RecruitmentChannelService>()
 						.AddSingleton<BanAppealChannelService>()
 						//.AddSingleton<ReactionRoleService>()
+						// How to use resources:
+						//_services.GetRequiredService<ResourceManager>().GetString("key")
 						.AddSingleton(new ResourceManager("tModloaderDiscordBot.Properties.Resources", GetType().Assembly))
 						.AddSingleton<LoggingService>()
 						.AddSingleton<GuildConfigService>()
 						.AddSingleton<SiteStatusService>()
 						.AddSingleton<GuildTagService>()
 						.AddSingleton<PermissionService>()
-						.AddSingleton<ModService>();
-
-				//foreach (var type in AppDomain.CurrentDomain.GetAssemblies()
-				//	.SelectMany(x => x.GetTypes())
-				//	.Where(x => 
-				//		x.IsAssignableFrom(typeof(IBotService)) 
-				//		&& x.IsClass 
-				//		&& !x.IsAbstract))
-				//{
-				//	serviceCollection.AddSingleton(Activator.CreateInstance(type));
-				//}
-
-				return serviceCollection;
+						.AddSingleton<ModService>()
+						.BuildServiceProvider();
 			}
-
-			// How to use resources:
-			//_services.GetRequiredService<ResourceManager>().GetString("key")
 
 			_client = new DiscordSocketClient(new DiscordSocketConfig
 			{
 				AlwaysDownloadUsers = true,
-				LogLevel = LogSeverity.Verbose
+				LogLevel = LogSeverity.Verbose,
+				MessageCacheSize = 100
 			});
 			_commandService = new CommandService(new CommandServiceConfig
 			{
 				DefaultRunMode = RunMode.Async,
-				CaseSensitiveCommands = false
+				CaseSensitiveCommands = false,
+#if TESTBOT
+				LogLevel = LogSeverity.Critical,
+				ThrowOnError = true,
+#else
+				LogLevel = LogSeverity.Debug,
+				ThrowOnError = false
+#endif
 			});
 
-			_services = BuildServiceCollection().BuildServiceProvider();
+			_services = BuildServiceProvider();
 			await _services.GetRequiredService<CommandHandlerService>().InitializeAsync();
-			_loggingService = _services.GetRequiredService<LoggingService>();
-			_loggingService.InitializeAsync();
-			_modService = _services.GetRequiredService<ModService>();
-			//_reactionRoleService = _services.GetRequiredService<ReactionRoleService>();
-			_services.GetRequiredService<HastebinService>();
-			_services.GetRequiredService<RecruitmentChannelService>();
+			_services.GetRequiredService<LoggingService>().Initialize();
 
 			_client.Ready += ClientReady;
 			_client.GuildAvailable += ClientGuildAvailable;
 			_client.LatencyUpdated += ClientLatencyUpdated;
 
+			// Begin our connection once everything is hooked up and ready to go
+			// Because this is async, this returns immediately (connection is handled on a separate thread by the con manager)
+			await _client.StartAsync().ContinueWith(async _ =>
+			{
+#if TESTBOT
+				await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TestBotToken"), validateToken: true);
+#else
+				await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TmlBotToken"), validateToken: true);
+#endif
+			});
+
 			Console.Title = $@"tModLoader Bot - {DateTime.Now}";
 			await Console.Out.WriteLineAsync($"https://discordapp.com/api/oauth2/authorize?client_id=&scope=bot");
 			await Console.Out.WriteLineAsync($"Start date: {DateTime.Now}");
-#if TESTBOT
-			await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TestBotToken"));
-#else
-			await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TmlBotToken"));
-#endif
-			await _client.StartAsync();
-
 			await Task.Delay(-1);
 		}
 
@@ -114,25 +109,20 @@ namespace tModloaderDiscordBot
 			await _client.SetStatusAsync(newUserStatus);
 		}
 
-		public static bool Ready;
-
 		private async Task ClientReady()
 		{
 			Ready = false;
-			await _client.SetGameAsync("Bot is starting");
-			await _client.SetStatusAsync(UserStatus.Invisible);
+			await _client.SetGameAsync("Bot is starting...");
+			await _client.SetStatusAsync(UserStatus.DoNotDisturb);
 
 			BotOwner = (await _client.GetApplicationInfoAsync()).Owner;
 
 			await _services.GetRequiredService<GuildConfigService>().SetupAsync();
 			await _services.GetRequiredService<SiteStatusService>().UpdateAsync();
-			await _modService.Initialize();
-			await _modService.Maintain(_client);
+			await _services.GetRequiredService<ModService>().Initialize().Maintain(_client);
 			//await _reactionRoleService.Maintain(_client);
-			//Odd bug, doesn't work here on tmod server. Check if this works once discord.net updates.
-			//await _services.GetRequiredService<RecruitmentChannelService>().SetupAsync();
 
-			await _loggingService.Log(new LogMessage(LogSeverity.Info, "ClientReady", "Done."));
+			await _services.GetRequiredService<LoggingService>().Log(new LogMessage(LogSeverity.Info, "ClientReady", "Done."));
 			await _client.SetGameAsync("tModLoader " + ModService.tMLVersion);
 			await ClientLatencyUpdated(_client.Latency, _client.Latency);
 #if !TESTBOT
