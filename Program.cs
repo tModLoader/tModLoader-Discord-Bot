@@ -135,6 +135,10 @@ namespace tModloaderDiscordBot
 			await _loggingService.Log(new LogMessage(LogSeverity.Info, "ClientReady", "Done."));
 			await _client.SetGameAsync("tModLoader " + ModService.tMLVersion);
 			await ClientLatencyUpdated(_client.Latency, _client.Latency);
+#if !TESTBOT
+			var botChannel = (ISocketMessageChannel)await _client.GetChannelAsync(242228770855976960);
+			await botChannel.SendMessageAsync("Bot has started successfully.");
+#endif
 			Ready = true;
 		}
 
