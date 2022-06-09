@@ -33,13 +33,21 @@ namespace tModloaderDiscordBot.Services
 			banAppealRole = banAppealChannel.Guild.Roles.FirstOrDefault(x => x.Name == banAppealRoleName) as SocketRole;
 		}
 
-		private async Task HandleGuildMemberUpdated(SocketGuildUser before, SocketGuildUser after)
+		private async Task HandleGuildMemberUpdated(Cacheable<SocketGuildUser, ulong> before, SocketGuildUser after)
 		{
 			if (banAppealChannel == null)
 				return;
 
+			if (!before.HasValue)
+				await before.DownloadAsync();
+
+			//await before.GetOrDownloadAsync().ContinueWith((user) =>
+			//{
+			//
+			//});
+
 			if (after.Roles.Contains(banAppealRole))
-				if (!before.Roles.Contains(banAppealRole)){
+				if (!before.Value.Roles.Contains(banAppealRole)){
 				{
 					var embed = new EmbedBuilder()
 					.WithColor(Color.Blue)

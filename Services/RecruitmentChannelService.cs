@@ -85,7 +85,7 @@ namespace tModloaderDiscordBot.Services
 			}
 		}
 
-		private async Task HandleReactionAdded(Cacheable<IUserMessage, ulong> cacheableMessage, ISocketMessageChannel channel, SocketReaction reaction)
+		private async Task HandleReactionAdded(Cacheable<IUserMessage, ulong> cacheableMessage, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
 		{
 			if (recruitmentChannel == null)
 				return;
@@ -100,8 +100,11 @@ namespace tModloaderDiscordBot.Services
 			if (!(reaction.User.Value is IGuildUser reactionAuthor))
 				return;
 
+			if (!channel.HasValue)
+				await channel.DownloadAsync();
+
 			// Users reacting to messages they own in recruitmentChannel can bump their message.
-			if (channel == recruitmentChannel)
+			if (channel.Id == recruitmentChannel.Id)
 			{
 				// Thought: We could just track original message, and update it from that, rather than delete. Allows original user to update.
 
