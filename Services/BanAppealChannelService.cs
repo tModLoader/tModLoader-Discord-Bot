@@ -14,6 +14,7 @@ namespace tModloaderDiscordBot.Services
 		private string banAppealRoleName;
 		private SocketRole banAppealRole;
 		internal ITextChannel banAppealChannel;
+		private bool isSetup = false;
 
 #if TESTBOT
 		private const ulong banAppealChannelId = 816493360722083851;
@@ -27,28 +28,27 @@ namespace tModloaderDiscordBot.Services
 			_client.GuildMemberUpdated += HandleGuildMemberUpdated;
 		}
 
-		internal void Setup()
+		internal async Task<bool> Setup()
 		{
-			banAppealChannel = (ITextChannel)_client.GetChannel(banAppealChannelId);
-			banAppealRoleName = "BEGONE, EVIL!";
-			banAppealRole = banAppealChannel.Guild.Roles.FirstOrDefault(x => x.Name == banAppealRoleName) as SocketRole;
+			if (!isSetup)
+				isSetup = await Task.Run(() =>
+				{
+					banAppealChannel = (ITextChannel)_client.GetChannel(banAppealChannelId);
+					banAppealRoleName = "BEGONE, EVIL!";
+					banAppealRole = banAppealChannel.Guild.Roles.FirstOrDefault(x => x.Name == banAppealRoleName) as SocketRole;
+					return true;
+				});
+			return isSetup;
 		}
 
 		private async Task HandleGuildMemberUpdated(Cacheable<SocketGuildUser, ulong> before, SocketGuildUser after)
 		{
-			if (banAppealChannel == null)
+			if (!await Setup())
 				return;
 
-			if (!before.HasValue)
-				await before.DownloadAsync();
-
-			//await before.GetOrDownloadAsync().ContinueWith((user) =>
-			//{
-			//
-			//});
-
-			if (after.Roles.Contains(banAppealRole))
-				if (!before.Value.Roles.Contains(banAppealRole)){
+			await before.GetOrDownloadAsync().ContinueWith(async _ =>
+			{
+				if (after.Roles.Contains(banAppealRole) && !before.Value.Roles.Contains(banAppealRole))
 				{
 					var embed = new EmbedBuilder()
 					.WithColor(Color.Blue)
@@ -56,7 +56,7 @@ namespace tModloaderDiscordBot.Services
 					.Build();
 					var botMessage = await banAppealChannel.SendMessageAsync("", embed: (Embed)embed);
 				}
-			}
+			});
 		}
 	}
 }

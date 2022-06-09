@@ -145,7 +145,7 @@ namespace tModloaderDiscordBot
 		private async Task ClientGuildAvailable(SocketGuild arg)
 		{
 			await _services.GetRequiredService<RecruitmentChannelService>().SetupAsync();
-			_services.GetRequiredService<BanAppealChannelService>().Setup();
+			await _services.GetRequiredService<BanAppealChannelService>().Setup();
 			return;
 		}
 	}
