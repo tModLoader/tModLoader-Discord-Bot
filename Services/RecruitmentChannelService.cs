@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace tModloaderDiscordBot.Services
 {
@@ -28,14 +27,11 @@ namespace tModloaderDiscordBot.Services
 			}
 		}
 
-		private readonly DiscordSocketClient _client;
-
 		internal ITextChannel recruitmentChannel;
 		internal static readonly Dictionary<ulong, TrackedMessage> TrackedMessages = new Dictionary<ulong, TrackedMessage>();
 
 		public RecruitmentChannelService(IServiceProvider services) : base(services)
 		{
-			_client = services.GetRequiredService<DiscordSocketClient>();
 			_client.ReactionAdded += HandleReactionAdded;
 		}
 
@@ -147,8 +143,8 @@ namespace tModloaderDiscordBot.Services
 			}
 			else // Moderators reacting to messages in other channels can move message to Recruitment
 			{
-				var authorPermissionsInRectuitmentChannel = reactionAuthor.GetPermissions((IGuildChannel)recruitmentChannel);
-				if (!authorPermissionsInRectuitmentChannel.SendMessages)
+				var authorPermissionsInRecruitmentChannel = reactionAuthor.GetPermissions(recruitmentChannel);
+				if (!authorPermissionsInRecruitmentChannel.SendMessages)
 					return; // Not authorized to post in recruitment channel.
 
 				var message = await cacheableMessage.GetOrDownloadAsync();

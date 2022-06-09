@@ -30,7 +30,8 @@ namespace tModloaderDiscordBot.Components
 
 		public async Task<bool> Update()
 		{
-			if (_guildConfigService == null) return false;
+			if (_guildConfigService == null) 
+				return false;
 
 			await _guildConfigService.UpdateCacheForConfig(this);
 			await _guildConfigService.WriteGuildConfig(this);

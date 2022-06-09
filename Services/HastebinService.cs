@@ -1,15 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
-using tModloaderDiscordBot.Utils;
 
 namespace tModloaderDiscordBot.Services
 {
@@ -29,11 +25,8 @@ namespace tModloaderDiscordBot.Services
 			"markdown",
 		};
 
-		private readonly DiscordSocketClient _client;
-
 		public HastebinService(IServiceProvider services) : base(services)
 		{
-			_client = services.GetRequiredService<DiscordSocketClient>();
 			_client.MessageReceived += HandleCommand;
 		}
 

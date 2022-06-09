@@ -10,11 +10,10 @@ namespace tModloaderDiscordBot.Services
 {
 	class BanAppealChannelService : BaseService
 	{
-		private readonly DiscordSocketClient _client;
 		private string banAppealRoleName;
 		private SocketRole banAppealRole;
 		internal ITextChannel banAppealChannel;
-		private bool isSetup = false;
+		private bool _isSetup = false;
 
 #if TESTBOT
 		private const ulong banAppealChannelId = 816493360722083851;
@@ -24,14 +23,13 @@ namespace tModloaderDiscordBot.Services
 
 		public BanAppealChannelService(IServiceProvider services) : base(services)
 		{
-			_client = services.GetRequiredService<DiscordSocketClient>();
 			_client.GuildMemberUpdated += HandleGuildMemberUpdated;
 		}
 
 		internal async Task<bool> Setup()
 		{
-			if (!isSetup)
-				isSetup = await Task.Run(() =>
+			if (!_isSetup)
+				_isSetup = await Task.Run(() =>
 				{
 					banAppealChannel = (ITextChannel)_client.GetChannel(banAppealChannelId);
 					// TODO Make this configurable
@@ -39,7 +37,7 @@ namespace tModloaderDiscordBot.Services
 					banAppealRole = banAppealChannel.Guild.Roles.FirstOrDefault(x => x.Name == banAppealRoleName) as SocketRole;
 					return true;
 				});
-			return isSetup;
+			return _isSetup;
 		}
 
 		private async Task HandleGuildMemberUpdated(Cacheable<SocketGuildUser, ulong> before, SocketGuildUser after)

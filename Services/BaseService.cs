@@ -1,19 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
+using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace tModloaderDiscordBot.Services
 {
-    [SuppressMessage("ReSharper", "InconsistentNaming")]
+	[SuppressMessage("ReSharper", "InconsistentNaming")]
     public abstract class BaseService : IBotService
     {
+	    protected readonly DiscordSocketClient _client;
 	    protected readonly LoggingService _loggingService;
 
-	    protected BaseService(IServiceProvider services)
+		protected BaseService(IServiceProvider services)
 	    {
-		    _loggingService = services.GetRequiredService<LoggingService>();
+			_client = services.GetRequiredService<DiscordSocketClient>();
+			_loggingService = services.GetRequiredService<LoggingService>();
 	    }
 	}
 }

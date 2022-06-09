@@ -38,18 +38,16 @@ namespace tModloaderDiscordBot.Services
 
 		private static SemaphoreSlim _semaphore;
 		//private static Timer _updateTimer;
-		private readonly DiscordSocketClient _client;
 
-		public ModService(IServiceProvider services, DiscordSocketClient client) : base(services)
+		public ModService(IServiceProvider services) : base(services)
 		{
-			_client = client;
 		}
 
 		public ModService Initialize()
 		{
-			using var client = new WebClient();
+			//using var client = new WebClient();
 			//The Github api expects at least more than 5 letters here, change it to whatever you want
-			client.Headers.Add("user-agent", "Discord.Net");
+			//client.Headers.Add("user-agent", "Discord.Net");
 			
 			/* This not working anymore with 1.4 alphas making releases.
 			tMLVersion = $"tModLoader {JObject.Parse(client.DownloadString(NewestReleaseUrl)).GetValue("tag_name")}";
@@ -69,7 +67,7 @@ namespace tModloaderDiscordBot.Services
 			return this;
 		}
 
-		public async Task Maintain(IDiscordClient client)
+		public async Task Maintain()
 		{
 			await Log("Starting maintenance");
 			// Create dirs
