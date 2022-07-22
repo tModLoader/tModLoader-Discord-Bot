@@ -141,7 +141,7 @@ namespace tModloaderDiscordBot.Services
 
 				TrackedMessages[botMessage.Id] = new TrackedMessage(trackedMessage.originalAuthor, botMessage.Timestamp);
 			}
-			else // Moderators reacting to messages in other channels can move message to Recruitment
+			else if(emoteName == "📡") // Moderators reacting to messages in other channels can move message to Recruitment
 			{
 				var authorPermissionsInRecruitmentChannel = reactionAuthor.GetPermissions(recruitmentChannel);
 				if (!authorPermissionsInRecruitmentChannel.SendMessages)

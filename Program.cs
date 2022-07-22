@@ -69,6 +69,7 @@ namespace tModloaderDiscordBot
 
 			_services = BuildServiceProvider();
 			await _services.GetRequiredService<CommandHandlerService>().InitializeAsync();
+			_services.GetRequiredService<HastebinService>();
 			_services.GetRequiredService<LoggingService>().Initialize();
 
 			_client.Ready += ClientReady;
@@ -119,7 +120,7 @@ namespace tModloaderDiscordBot
 
 			await _services.GetRequiredService<GuildConfigService>().SetupAsync();
 			await _services.GetRequiredService<SiteStatusService>().UpdateAsync();
-			await _services.GetRequiredService<ModService>().Initialize().Maintain(_client);
+			await _services.GetRequiredService<ModService>().Initialize().Maintain();
 			//await _reactionRoleService.Maintain(_client);
 
 			await _services.GetRequiredService<LoggingService>().Log(new LogMessage(LogSeverity.Info, "ClientReady", "Done."));

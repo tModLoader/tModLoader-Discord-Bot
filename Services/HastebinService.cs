@@ -9,7 +9,7 @@ using Discord.WebSocket;
 
 namespace tModloaderDiscordBot.Services
 {
-	class HastebinService : BaseService
+	public class HastebinService : BaseService
 	{
 		private static readonly Regex _HasteKeyRegex = new Regex(@"{""key"":""(?<key>[a-z].*)""}", RegexOptions.Compiled);
 
