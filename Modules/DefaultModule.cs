@@ -187,11 +187,11 @@ namespace tModloaderDiscordBot.Modules
 			else
 			{
 				// might be a modded class:
-				//http://tmodloader.github.io/tModLoader/html/namespace_terraria_1_1_mod_loader.js
+				//http://tmodloader.github.io/tModLoader/docs/1.4-stable/namespace_terraria_1_1_mod_loader.js
 
 				using (var client = new WebClient())
 				{
-					string response = await client.DownloadStringTaskAsync("http://tmodloader.github.io/tModLoader/html/namespace_terraria_1_1_mod_loader.js");
+					string response = await client.DownloadStringTaskAsync("http://tmodloader.github.io/tModLoader/docs/1.4-stable/namespace_terraria_1_1_mod_loader.js");
 					response = string.Join("\n", response.Split("\n").Skip(1)).TrimEnd(';');
 					var resultObject = JsonConvert.DeserializeObject<List<List<object>>>(response);
 					var stringResultsOnly = resultObject.Where(x => x.All(y => y is string));
@@ -206,20 +206,20 @@ namespace tModloaderDiscordBot.Modules
 						className = r[0];
 						if (methodName == "")
 						{
-							await ReplyAsync($"Documentation for `{className}`: http://tmodloader.github.io/tModLoader/html/{r[1]}");
+							await ReplyAsync($"Documentation for `{className}`: http://tmodloader.github.io/tModLoader/docs/1.4-stable/{r[1]}");
 						}
 						else
 						{
-							Console.WriteLine("http://tmodloader.github.io/tModLoader/html/{r[2]}.js");
+							Console.WriteLine("http://tmodloader.github.io/tModLoader/docs/1.4-stable/{r[2]}.js");
 							// now to find method name
-							response = await client.DownloadStringTaskAsync($"http://tmodloader.github.io/tModLoader/html/{r[2]}.js");
+							response = await client.DownloadStringTaskAsync($"http://tmodloader.github.io/tModLoader/docs/1.4-stable/{r[2]}.js");
 							response = string.Join("\n", response.Split("\n").Skip(1)).TrimEnd(';');
 							result = JsonConvert.DeserializeObject<List<List<string>>>(response);
 							r = result.Find(x => x[0].EqualsIgnoreCase(methodNameLower));
 							if (r != null)
 							{
 								methodName = r[0];
-								await ReplyAsync($"Documentation for `{className}.{methodName}`: http://tmodloader.github.io/tModLoader/html/{r[1]}");
+								await ReplyAsync($"Documentation for `{className}.{methodName}`: http://tmodloader.github.io/tModLoader/docs/1.4-stable/{r[1]}");
 							}
 							else
 							{
