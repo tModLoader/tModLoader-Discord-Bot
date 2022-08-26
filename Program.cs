@@ -50,6 +50,7 @@ namespace tModloaderDiscordBot
 
 			_client = new DiscordSocketClient(new DiscordSocketConfig
 			{
+				GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.GuildMembers,
 				AlwaysDownloadUsers = true,
 				LogLevel = LogSeverity.Verbose,
 				MessageCacheSize = 100
