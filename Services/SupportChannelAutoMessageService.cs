@@ -56,6 +56,7 @@ namespace tModloaderDiscordBot.Services
 					supportForum = (IForumChannel)_client.GetChannel(supportForumId);
 					var activeThreads = await supportForum.GetActiveThreadsAsync();
 					supportForumPinnedThread = activeThreads.FirstOrDefault(x => x.Id == 1019968948738986064);
+					await _loggingService.Log(new LogMessage(LogSeverity.Info, "Support", $"Support pinned post {(supportForumPinnedThread == null ? "not found" : "found")}."));
 					return true;
 				});
 			return _isSetup;
