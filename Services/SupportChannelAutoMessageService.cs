@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
@@ -11,6 +12,14 @@ namespace tModloaderDiscordBot.Services
 {
 	internal class SupportChannelAutoMessageService : BaseService
 	{
+		internal IForumChannel supportForum;
+		internal IThreadChannel supportForumPinnedThread;
+#if TESTBOT
+		private const ulong supportForumId = ;
+#else
+		private const ulong supportForumId = 1019958533355229316;
+#endif
+
 		internal ITextChannel supportChannel;
 		private bool _isSetup = false;
 #if TESTBOT
@@ -24,14 +33,29 @@ namespace tModloaderDiscordBot.Services
 			var _client = services.GetRequiredService<DiscordSocketClient>();
 
 			_client.ThreadCreated += _client_ThreadCreated;
+			_client.MessageReceived += _client_MessageReceived;
+		}
+
+		private async Task _client_MessageReceived(SocketMessage message)
+		{
+			if (!await Setup())
+				return;
+
+			if (message.Channel.Id != supportForumPinnedThread.Id)
+				return;
+
+			await message.DeleteAsync();
 		}
 
 		internal async Task<bool> Setup()
 		{
 			if (!_isSetup)
-				_isSetup = await Task.Run(() =>
+				_isSetup = await Task.Run(async () =>
 				{
 					supportChannel = (ITextChannel)_client.GetChannel(supportChannelId);
+					supportForum = (IForumChannel)_client.GetChannel(supportForumId);
+					var activeThreads = await supportForum.GetActiveThreadsAsync();
+					supportForumPinnedThread = activeThreads.FirstOrDefault(x => x.Id == 1019968948738986064);
 					return true;
 				});
 			return _isSetup;
