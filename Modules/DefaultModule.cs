@@ -20,6 +20,7 @@ namespace tModloaderDiscordBot.Modules
 	[Name("default")]
 	public class DefaultModule : BotModuleBase
 	{
+		public LegacyModService LegacyModService { get; set; }
 		public ModService ModService { get; set; }
 
 		//public BaseModule(CommandService commandService, GuildConfigService guildConfigService) : base(commandService, guildConfigService)
@@ -64,7 +65,7 @@ namespace tModloaderDiscordBot.Modules
 
 			if (result)
 			{
-				var modFound = ModService.Mods.FirstOrDefault(x => x.EqualsIgnoreCase(mod));
+				var modFound = LegacyModService.Mods.FirstOrDefault(x => x.EqualsIgnoreCase(mod));
 
 				if (modFound != null)
 				{
@@ -74,7 +75,7 @@ namespace tModloaderDiscordBot.Modules
 
 					using (var client = new System.Net.Http.HttpClient())
 					{
-						var response = await client.GetByteArrayAsync($"{ModService.WidgetUrl}{modFound}");
+						var response = await client.GetByteArrayAsync($"{LegacyModService.WidgetUrl}{modFound}");
 						using (var stream = new MemoryStream(response))
 						{
 							await Context.Channel.SendFileAsync(stream, $"widget-{modFound}.png");
@@ -238,18 +239,18 @@ namespace tModloaderDiscordBot.Modules
 			}
 		}
 
-		[Command("mod")]
-		[Alias("modinfo")]
+		[Command("mod-legacy")]
+		[Alias("modinfo-legacy")]
 		[Summary("Shows info about a mod")]
 		[Remarks("mod <internal modname> --OR-- mod <part of name>\nmod examplemod")]
 		[Priority(-99)]
-		public async Task Mod([Remainder] string mod)
+		public async Task LegacyMod([Remainder] string mod)
 		{
 			mod = mod.RemoveWhitespace();
 
 			if (mod.EqualsIgnoreCase(">count"))
 			{
-				await ReplyAsync($"Found `{ModService.Mods.Count()}` cached mods");
+				await ReplyAsync($"Found `{LegacyModService.Mods.Count()}` cached mods");
 				return;
 			}
 
@@ -260,14 +261,14 @@ namespace tModloaderDiscordBot.Modules
 				if (string.IsNullOrEmpty(str))
 				{
 					// Fixes not finding files
-					mod = ModService.Mods.FirstOrDefault(m => string.Equals(m, mod, StringComparison.CurrentCultureIgnoreCase));
+					mod = LegacyModService.Mods.FirstOrDefault(m => string.Equals(m, mod, StringComparison.CurrentCultureIgnoreCase));
 					if (mod == null)
 						return;
 				}
 				else mod = str;
 
 				// Some mod is found continue.
-				var modjson = JObject.Parse(await FileUtils.FileReadToEndAsync(new SemaphoreSlim(1, 1), ModService.ModPath(mod)));
+				var modjson = JObject.Parse(await FileUtils.FileReadToEndAsync(new SemaphoreSlim(1, 1), LegacyModService.ModPath(mod)));
 				var eb = new EmbedBuilder()
 					.WithTitle("Mod: ")
 					.WithCurrentTimestamp()
@@ -308,10 +309,10 @@ namespace tModloaderDiscordBot.Modules
 					}
 				}
 
-				eb.AddField("Widget", $"<{ModService.WidgetUrl}{mod}>", true);
+				eb.AddField("Widget", $"<{LegacyModService.WidgetUrl}{mod}>", true);
 				using (var client = new System.Net.Http.HttpClient())
 				{
-					var response = await client.GetAsync(ModService.QueryHomepageUrl + mod);
+					var response = await client.GetAsync(LegacyModService.QueryHomepageUrl + mod);
 					var postResponse = await response.Content.ReadAsStringAsync();
 					if (!string.IsNullOrEmpty(postResponse) && !postResponse.StartsWith("Failed:"))
 					{
@@ -324,13 +325,102 @@ namespace tModloaderDiscordBot.Modules
 			}
 		}
 
+		[Command("mod")]
+		[Alias("modinfo")]
+		[Summary("Shows info about a mod")]
+		[Remarks("mod <internal modname or mod id> \nmod examplemod")]
+		[Priority(-99)]
+		public async Task Mod([Remainder] string modName)
+		{
+			modName = modName.RemoveWhitespace();
+			string modJson = await ModService.DownloadSingleData(modName);
+			var modJData = JObject.Parse(modJson); // parse json string
+			
+			// parse json into object
+			var modData = new {
+				displayName = modJData["display_name"]?.Value<string>(),
+				internalName = modJData["internal_name"]?.Value<string>(),
+				modID = modJData["mod_id"]?.Value<string>(),
+				version = modJData["version"]?.Value<string>(),
+				workshopIconURL = modJData["workshop_icon_url"]?.Value<string>(),
+				author = modJData["author"]?.Value<string>(),
+				authorID = modJData["author_id"]?.Value<string>(),
+				downloads = modJData["downloads_total"]?.Value<int>(),
+				views = modJData["views"]?.Value<int>(),
+				favorited = modJData["favorited"]?.Value<int>(),
+				playtime = modJData["playtime"]?.Value<string>(),
+				voteData = modJData["vote_data"]?.Value<JToken>(),
+				modside = modJData["modside"]?.Value<string>(),
+				tmodloaderVersion = modJData["tmodloader_version"]?.Value<string>(),
+				timeCreated = modJData["time_created"]?.Value<int>(),
+				timeUpdated = modJData["time_updated"]?.Value<int>(),
+				homepage = modJData["homepage"]?.Value<string>()
+			};
+			
+			// create embed
+			var eb = new EmbedBuilder()
+				.WithTitle($"Mod: {modData.displayName} ({modData.internalName}) {modData.version}")
+				.WithCurrentTimestamp()
+				.WithAuthor(new EmbedAuthorBuilder
+				{
+					IconUrl = Context.Message.Author.GetAvatarUrl(),
+					Name = $"Requested by {Context.Message.Author.FullName()}"
+				})
+				.WithUrl($"https://steamcommunity.com/sharedfiles/filedetails/?id={modData.modID}")
+				.WithThumbnailUrl(modData.workshopIconURL);
+
+			// add fields
+			eb.AddField("Author",
+				$"[{modData.author} ({modData.authorID})]" +
+				$"(https://steamcommunity.com/profiles/{modData.authorID}/)");
+
+			eb.AddField("Downloads", modData.downloads, true);
+			eb.AddField("Views", modData.views, true);
+			eb.AddField("Favorites", modData.favorited, true);
+
+			ulong playtime = ulong.Parse(modData.playtime ?? "0");
+			eb.AddField("Playtime", playtime / 3600_0000 + " hours");
+			
+			// if vote data exists
+			if (modData.voteData is { } data) {
+				// calculate star amount
+				double fullStarCount = 5 * data["score"]?.Value<double>() ?? 0;
+				double emptyStarCount = 5 - fullStarCount;
+				
+				// concatinate star characters to string
+				string s = string.Concat(
+					new string(Enumerable.Repeat('\u2605', (int)Math.Round(fullStarCount)).ToArray()),
+					new string(Enumerable.Repeat('\u2606', (int)Math.Round(emptyStarCount)).ToArray()));
+				
+				eb.AddField("Votes", s, true);
+				eb.AddField("Upvotes", data["votes_up"]?.Value<int>(), true);
+				eb.AddField("Downvotes", data["votes_down"]?.Value<int>(), true);
+			}
+			
+			eb.AddField("Mod Side", modData.modside);
+			eb.AddField("tModLoader Version", modData.tmodloaderVersion);
+
+			eb.AddField("Last updated", $"<t:{modData.timeUpdated}:d>", true);
+			eb.AddField("Time created", $"<t:{modData.timeCreated}:d>", true);
+
+			// if tags are present
+			if (modJData["tags"] is { } tags)
+			{
+				eb.AddField("Tags", string.Join(", ", tags?.Select(x => x["display_name"].Value<string>())));
+			}
+
+			eb.AddField("Homepage", modData.homepage);
+			
+			await ReplyAsync("", embed: eb.Build());
+		}
+
 		// Helper method
 		private async Task<(bool, string)> ShowSimilarMods(string mod)
 		{
-			var mods = ModService.Mods.Where(m => string.Equals(m, mod, StringComparison.CurrentCultureIgnoreCase));
+			var mods = LegacyModService.Mods.Where(m => string.Equals(m, mod, StringComparison.CurrentCultureIgnoreCase));
 
 			if (mods.Any()) return (true, string.Empty);
-			var cached = await ModService.TryCacheMod(mod);
+			var cached = await LegacyModService.TryCacheMod(mod);
 			if (cached) return (true, string.Empty);
 
 			const string msg = "Mod with that name doesn\'t exist";
@@ -339,7 +429,7 @@ namespace tModloaderDiscordBot.Modules
 			// Find similar mods
 
 			var similarMods =
-				ModService.Mods
+				LegacyModService.Mods
 					.Where(m => m.Contains(mod, StringComparison.CurrentCultureIgnoreCase)
 								&& m.LevenshteinDistance(mod) <= m.Length - 2) // prevents insane amount of mods found
 					.ToArray();
@@ -356,7 +446,7 @@ namespace tModloaderDiscordBot.Modules
 					// Make sure message doesn't end with a half cut modname
 					var index = modMsg.LastIndexOf(',');
 					var lastModClean = modMsg.Substring(index + 1).Replace("`", "").Trim();
-					if (ModService.Mods.All(m => m != lastModClean))
+					if (LegacyModService.Mods.All(m => m != lastModClean))
 						modMsg = modMsg.Substring(0, index);
 				}
 			}

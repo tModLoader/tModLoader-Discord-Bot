@@ -45,6 +45,7 @@ namespace tModloaderDiscordBot
 						.AddSingleton<SiteStatusService>()
 						.AddSingleton<GuildTagService>()
 						.AddSingleton<PermissionService>()
+						.AddSingleton<LegacyModService>()
 						.AddSingleton<ModService>()
 						.BuildServiceProvider();
 			}
@@ -122,11 +123,11 @@ namespace tModloaderDiscordBot
 
 			await _services.GetRequiredService<GuildConfigService>().SetupAsync();
 			await _services.GetRequiredService<SiteStatusService>().UpdateAsync();
-			await _services.GetRequiredService<ModService>().Initialize().Maintain();
+			await _services.GetRequiredService<LegacyModService>().Initialize().Maintain();
 			//await _reactionRoleService.Maintain(_client);
 
 			await _services.GetRequiredService<LoggingService>().Log(new LogMessage(LogSeverity.Info, "ClientReady", "Done."));
-			await _client.SetGameAsync("tModLoader " + ModService.tMLVersion);
+			await _client.SetGameAsync("tModLoader " + LegacyModService.tMLVersion);
 			await ClientLatencyUpdated(_client.Latency, _client.Latency);
 #if !TESTBOT
 			var botChannel = (ISocketMessageChannel)await _client.GetChannelAsync(242228770855976960);
