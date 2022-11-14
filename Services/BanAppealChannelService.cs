@@ -16,7 +16,7 @@ namespace tModloaderDiscordBot.Services
 		private bool _isSetup = false;
 
 #if TESTBOT
-		private const ulong banAppealChannelId = 816493360722083851;
+		private const ulong banAppealChannelId = 1041803889105702923;
 #else
 		private const ulong banAppealChannelId = 331867286312845313;
 #endif

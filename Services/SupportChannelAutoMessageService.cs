@@ -15,7 +15,7 @@ namespace tModloaderDiscordBot.Services
 		internal IForumChannel supportForum;
 		internal IThreadChannel supportForumPinnedThread;
 #if TESTBOT
-		private const ulong supportForumId = ;
+		private const ulong supportForumId = 1041801595454759052;
 #else
 		private const ulong supportForumId = 1019958533355229316;
 #endif
@@ -23,7 +23,7 @@ namespace tModloaderDiscordBot.Services
 		internal ITextChannel supportChannel;
 		private bool _isSetup = false;
 #if TESTBOT
-		private const ulong supportChannelId = ;
+		private const ulong supportChannelId = 1041801721405505538;
 #else
 		private const ulong supportChannelId = 871289059396448337;
 #endif
