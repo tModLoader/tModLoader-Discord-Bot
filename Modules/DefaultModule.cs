@@ -334,8 +334,15 @@ namespace tModloaderDiscordBot.Modules
 		{
 			modName = modName.RemoveWhitespace();
 			string modJson = await ModService.DownloadSingleData(modName);
-			var modJData = JObject.Parse(modJson); // parse json string
-			
+			JObject modJData;
+			try {
+				modJData = JObject.Parse(modJson); // parse json string
+			}
+			catch {
+				await ReplyAsync(modJson);
+				return;
+			}
+
 			// parse json into object
 			var modData = new {
 				displayName = modJData["display_name"]?.Value<string>(),
