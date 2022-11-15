@@ -344,7 +344,8 @@ namespace tModloaderDiscordBot.Modules
 				}
 				catch
 				{
-					await ReplyAsync(modJson);
+					await ReplyAsync("an error occured when parsing JSON");
+					Console.WriteLine($"{nameof(DefaultModule)}.{nameof(Mod)}: Error when parsing json. Server response was:\n{modJson}");
 					return;
 				}
 
@@ -431,8 +432,9 @@ namespace tModloaderDiscordBot.Modules
 				var embed = eb.Build();
 				await ReplyAsync("", embed: embed);
 			}
-			catch 
+			catch (Exception e)
 			{
+				Console.WriteLine($"{nameof(DefaultModule)}.{nameof(Mod)}: An error occured generating the embed: {e.Message}\n{e.StackTrace}");
 				await ReplyAsync("an error occured generating the embed");
 			}
 		}
@@ -452,9 +454,10 @@ namespace tModloaderDiscordBot.Modules
 				{
 					authorJData = JObject.Parse(authorJson);
 				}
-				catch (Exception e)
+				catch
 				{
-					await ReplyAsync($"an error occured when trying to parse Data: ```\n{authorJson}\n```");
+					await ReplyAsync("an error occured when parsing JSON");
+					Console.WriteLine($"{nameof(DefaultModule)}.{nameof(LegacyAuthor)}: Error when parsing json. Server response was:\n{authorJson}");
 					return;
 				}
 
@@ -502,7 +505,8 @@ namespace tModloaderDiscordBot.Modules
 			}
 			catch (Exception e)
 			{
-				await ReplyAsync($"an error occured generating the embed:\n```\n{e.Message}\n{e.StackTrace}\n```");
+				Console.WriteLine($"{nameof(DefaultModule)}.{nameof(LegacyAuthor)}: An error occured generating the embed: {e.Message}\n{e.StackTrace}");
+				await ReplyAsync("an error occured generating the embed");
 			}
 		}
 		
@@ -523,7 +527,8 @@ namespace tModloaderDiscordBot.Modules
 				}
 				catch (Exception e)
 				{
-					await ReplyAsync($"an error occured when trying to parse Data: ```\n{authorJson}\n```");
+					await ReplyAsync("an error occured when parsing JSON");
+					Console.WriteLine($"{nameof(DefaultModule)}.{nameof(Author)}: Error when parsing json. Server response was:\n{authorJson}");
 					return;
 				}
 
@@ -565,8 +570,9 @@ namespace tModloaderDiscordBot.Modules
 				var embed = eb.Build();
 				await ReplyAsync("", embed: embed);
 			}
-			catch
+			catch (Exception e)
 			{
+				Console.WriteLine($"{nameof(DefaultModule)}.{nameof(Author)}: An error occured generating the embed: {e.Message}\n{e.StackTrace}");
 				await ReplyAsync("an error occured generating the embed");
 			}
 		}

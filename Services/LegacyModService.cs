@@ -142,36 +142,47 @@ namespace tModloaderDiscordBot.Services
 		private async Task<string> DownloadData()
 		{
 			await Log($"Requesting DownloadData. tMod version: {tMLVersion}");
-			using (var client = new System.Net.Http.HttpClient())
+			using var client = new System.Net.Http.HttpClient();
+			//var version = await GetTMLVersion();
+
+			var values = new Dictionary<string, string>
 			{
-				//var version = await GetTMLVersion();
+				{ "modloaderversion", $"tModLoader {tMLVersion}" },
+				{ "platform", "w"}
+			};
+			var content = new System.Net.Http.FormUrlEncodedContent(values);
 
-				var values = new Dictionary<string, string>
-				{
-					{ "modloaderversion", $"tModLoader {tMLVersion}" },
-					{ "platform", "w"}
-				};
-				var content = new System.Net.Http.FormUrlEncodedContent(values);
-
-				await Log("Sending post request");
-				var response = await client.PostAsync(XmlUrl, content);
-
-				await Log("Reading post request");
-				var postResponse = await response.Content.ReadAsStringAsync();
-
-				await Log("Done downloading data");
-				return postResponse;
+			await Log("Sending post request");
+			var response = await client.PostAsync(XmlUrl, content);
+			
+			if (!response.IsSuccessStatusCode)
+			{
+				await _loggingService.Log(new LogMessage(LogSeverity.Error, nameof(ModService),
+					$"'{XmlUrl}' responded with code {response.StatusCode}"));
+				return null;
 			}
+
+			await Log("Reading post request");
+			var postResponse = await response.Content.ReadAsStringAsync();
+
+			await Log("Done downloading data");
+			return postResponse;
 		}
 
 		private async Task<string> DownloadSingleData(string name)
 		{
-			using (var client = new System.Net.Http.HttpClient())
+			using var client = new System.Net.Http.HttpClient();
+			var response = await client.GetAsync(ModInfoUrl + $"?modname={name}");
+			
+			if (!response.IsSuccessStatusCode)
 			{
-				var response = await client.GetAsync(ModInfoUrl + $"?modname={name}");
-				var postResponse = await response.Content.ReadAsStringAsync();
-				return postResponse;
+				await _loggingService.Log(new LogMessage(LogSeverity.Error, nameof(ModService),
+					$"'{ModInfoUrl}?modname={name}' responded with code {response.StatusCode}"));
+				return null;
 			}
+			
+			var postResponse = await response.Content.ReadAsStringAsync();
+			return postResponse;
 		}
 
 		private async Task Log(string msg)
