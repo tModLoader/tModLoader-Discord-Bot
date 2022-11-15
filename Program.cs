@@ -47,6 +47,7 @@ namespace tModloaderDiscordBot
 						.AddSingleton<PermissionService>()
 						.AddSingleton<LegacyModService>()
 						.AddSingleton<ModService>()
+						.AddSingleton<AuthorService>()
 						.BuildServiceProvider();
 			}
 

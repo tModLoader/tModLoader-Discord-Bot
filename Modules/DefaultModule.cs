@@ -22,7 +22,8 @@ namespace tModloaderDiscordBot.Modules
 	{
 		public LegacyModService LegacyModService { get; set; }
 		public ModService ModService { get; set; }
-
+		public AuthorService AuthorService { get; set; }
+		
 		//public BaseModule(CommandService commandService, GuildConfigService guildConfigService) : base(commandService, guildConfigService)
 		//{
 		//}
@@ -428,7 +429,6 @@ namespace tModloaderDiscordBot.Modules
 				}
 
 				var embed = eb.Build();
-
 				await ReplyAsync("", embed: embed);
 			}
 			catch 
@@ -437,6 +437,71 @@ namespace tModloaderDiscordBot.Modules
 			}
 		}
 
+		[Command("author")]
+		[Alias("authorinfo")]
+		[Summary("Shows info about an author")]
+		[Remarks("author <steamid64 or steam name (not reliable)> \nauthor NotLe0n")]
+		[Priority(-99)]
+		public async Task Author([Remainder] string steamID)
+		{
+			try
+			{
+				var authorJson = await AuthorService.DownloadSingleData(steamID);
+				JObject authorJData;
+				try
+				{
+					authorJData = JObject.Parse(authorJson);
+				}
+				catch (Exception e)
+				{
+					await ReplyAsync(authorJson);
+					return;
+				}
+
+				var authorData = new
+				{
+					steamID = authorJData["steam_id"]?.Value<string>(),
+					steamName = authorJData["steam_name"]?.Value<string>(),
+					total = authorJData["total"]?.Value<int>(),
+					totalDownloads = authorJData["total_downloads"]?.Value<int>(),
+					totalFavorites = authorJData["total_favorites"]?.Value<int>(),
+					totalViews = authorJData["total_views"]?.Value<int>(),
+					mods = authorJData["mods"]?.Values<JObject>()
+				};
+
+				// create embed
+				var eb = new EmbedBuilder()
+					.WithTitle($"Author: {authorData.steamName}")
+					.WithCurrentTimestamp()
+					.WithAuthor(new EmbedAuthorBuilder
+					{
+						IconUrl = Context.Message.Author.GetAvatarUrl(),
+						Name = $"Requested by {Context.Message.Author.FullName()}"
+					})
+					.WithUrl($"https://steamcommunity.com/profiles/{authorData.steamID}/");
+
+				eb.AddField("Total Mod Count", authorData.total ?? 0);
+				eb.AddField("Total Downloads Count", authorData.totalDownloads ?? 0);
+				eb.AddField("Total View Count", authorData.totalViews ?? 0);
+				eb.AddField("Total Favorites Count", authorData.totalFavorites);
+
+				string mods = string.Join(", ", authorData.mods
+					.Select(mod =>
+						$"[{mod?["display_name"]?.Value<string>()}]" +
+						$"(https://steamcommunity.com/sharedfiles/filedetails/?id={mod?["mod_id"]?.Value<string>()})"));
+
+
+				eb.AddField("Mods", mods);
+
+				var embed = eb.Build();
+				await ReplyAsync("", embed: embed);
+			}
+			catch
+			{
+				await ReplyAsync("an error occured generating the embed");
+			}
+		}
+		
 		// Helper method
 		private async Task<(bool, string)> ShowSimilarMods(string mod)
 		{
