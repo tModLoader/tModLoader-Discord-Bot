@@ -437,6 +437,75 @@ namespace tModloaderDiscordBot.Modules
 			}
 		}
 
+		[Command("author-legacy")]
+		[Alias("authorinfo-legacy")]
+		[Summary("Shows info about an author")]
+		[Remarks("author <steamid64 or steam name (not reliable)> \nauthor NotLe0n")]
+		[Priority(-99)]
+		public async Task LegacyAuthor([Remainder] string steamID)
+		{
+			try
+			{
+				var authorJson = await AuthorService.DownloadSingleLegacyData(steamID);
+				JObject authorJData;
+				try
+				{
+					authorJData = JObject.Parse(authorJson);
+				}
+				catch (Exception e)
+				{
+					await ReplyAsync($"an error occured when trying to parse Data: ```\n{authorJson}\n```");
+					return;
+				}
+
+				var authorData = new
+				{
+					//steamID = authorJData["steam_id"]?.Value<string>(),
+					steamName = authorJData["steam_name"]?.Value<string>(),
+					total = authorJData["total"]?.Value<int>(),
+					downloadsTotal = authorJData["downloads_total"]?.Value<int>(),
+					downloadsYesterday = authorJData["downloads_yesterday"]?.Value<int>(),
+					mods = authorJData["mods"]?.Values<JObject>(),
+					maintainedMods = authorJData["maintained_mods"]?.Values<JObject>()
+				};
+
+				// create embed
+				var eb = new EmbedBuilder()
+					.WithTitle($"Author: {authorData.steamName}")
+					.WithCurrentTimestamp()
+					.WithAuthor(new EmbedAuthorBuilder
+					{
+						IconUrl = Context.Message.Author.GetAvatarUrl(),
+						Name = $"Requested by {Context.Message.Author.FullName()}"
+					});
+					//.WithUrl($"https://steamcommunity.com/profiles/{authorData.steamID}/");
+
+				eb.AddField("Total mod count", authorData.total ?? 0);
+				eb.AddField("Total downloads count", authorData.downloadsTotal ?? 0);
+				eb.AddField("Daily download count", authorData.downloadsYesterday ?? 0);
+
+				string mods = string.Join(", ", authorData.mods
+					.Select(mod => mod?["display_name"]?.Value<string>()));
+				
+				eb.AddField("Mods", mods);
+
+				
+				if (authorData.maintainedMods.Count() != 0) {
+					string maintainedMods = string.Join(", ", authorData.maintainedMods
+						.Select(mod => mod?["internal_name"]?.Value<string>()));
+
+					eb.AddField("Maintained Mods", maintainedMods);
+				}
+
+				var embed = eb.Build();
+				await ReplyAsync("", embed: embed);
+			}
+			catch (Exception e)
+			{
+				await ReplyAsync($"an error occured generating the embed:\n```\n{e.Message}\n{e.StackTrace}\n```");
+			}
+		}
+		
 		[Command("author")]
 		[Alias("authorinfo")]
 		[Summary("Shows info about an author")]
@@ -454,7 +523,7 @@ namespace tModloaderDiscordBot.Modules
 				}
 				catch (Exception e)
 				{
-					await ReplyAsync(authorJson);
+					await ReplyAsync($"an error occured when trying to parse Data: ```\n{authorJson}\n```");
 					return;
 				}
 
@@ -480,10 +549,10 @@ namespace tModloaderDiscordBot.Modules
 					})
 					.WithUrl($"https://steamcommunity.com/profiles/{authorData.steamID}/");
 
-				eb.AddField("Total Mod Count", authorData.total ?? 0);
-				eb.AddField("Total Downloads Count", authorData.totalDownloads ?? 0);
-				eb.AddField("Total View Count", authorData.totalViews ?? 0);
-				eb.AddField("Total Favorites Count", authorData.totalFavorites);
+				eb.AddField("Total mod Count", authorData.total ?? 0);
+				eb.AddField("Total downloads Count", authorData.totalDownloads ?? 0);
+				eb.AddField("Total view Count", authorData.totalViews ?? 0);
+				eb.AddField("Total favorites Count", authorData.totalFavorites);
 
 				string mods = string.Join(", ", authorData.mods
 					.Select(mod =>
