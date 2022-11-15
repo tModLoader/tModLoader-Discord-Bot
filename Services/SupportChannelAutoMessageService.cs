@@ -41,7 +41,7 @@ namespace tModloaderDiscordBot.Services
 			if (!await Setup())
 				return;
 
-			if (message.Channel.Id != supportForumPinnedThread.Id)
+			if (message?.Channel?.Id != supportForumPinnedThread?.Id)
 				return;
 
 			await message.DeleteAsync();

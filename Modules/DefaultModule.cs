@@ -332,93 +332,109 @@ namespace tModloaderDiscordBot.Modules
 		[Priority(-99)]
 		public async Task Mod([Remainder] string modName)
 		{
-			modName = modName.RemoveWhitespace();
-			string modJson = await ModService.DownloadSingleData(modName);
-			JObject modJData;
-			try {
-				modJData = JObject.Parse(modJson); // parse json string
-			}
-			catch {
-				await ReplyAsync(modJson);
-				return;
-			}
-
-			// parse json into object
-			var modData = new {
-				displayName = modJData["display_name"]?.Value<string>(),
-				internalName = modJData["internal_name"]?.Value<string>(),
-				modID = modJData["mod_id"]?.Value<string>(),
-				version = modJData["version"]?.Value<string>(),
-				workshopIconURL = modJData["workshop_icon_url"]?.Value<string>(),
-				author = modJData["author"]?.Value<string>(),
-				authorID = modJData["author_id"]?.Value<string>(),
-				downloads = modJData["downloads_total"]?.Value<int>(),
-				views = modJData["views"]?.Value<int>(),
-				favorited = modJData["favorited"]?.Value<int>(),
-				playtime = modJData["playtime"]?.Value<string>(),
-				voteData = modJData["vote_data"]?.Value<JToken>(),
-				modside = modJData["modside"]?.Value<string>(),
-				tmodloaderVersion = modJData["tmodloader_version"]?.Value<string>(),
-				timeCreated = modJData["time_created"]?.Value<int>(),
-				timeUpdated = modJData["time_updated"]?.Value<int>(),
-				homepage = modJData["homepage"]?.Value<string>()
-			};
-			
-			// create embed
-			var eb = new EmbedBuilder()
-				.WithTitle($"Mod: {modData.displayName} ({modData.internalName}) {modData.version}")
-				.WithCurrentTimestamp()
-				.WithAuthor(new EmbedAuthorBuilder
-				{
-					IconUrl = Context.Message.Author.GetAvatarUrl(),
-					Name = $"Requested by {Context.Message.Author.FullName()}"
-				})
-				.WithUrl($"https://steamcommunity.com/sharedfiles/filedetails/?id={modData.modID}")
-				.WithThumbnailUrl(modData.workshopIconURL);
-
-			// add fields
-			eb.AddField("Author",
-				$"[{modData.author} ({modData.authorID})]" +
-				$"(https://steamcommunity.com/profiles/{modData.authorID}/)");
-
-			eb.AddField("Downloads", modData.downloads, true);
-			eb.AddField("Views", modData.views, true);
-			eb.AddField("Favorites", modData.favorited, true);
-
-			ulong playtime = ulong.Parse(modData.playtime ?? "0");
-			eb.AddField("Playtime", playtime / 3600_0000 + " hours");
-			
-			// if vote data exists
-			if (modData.voteData is { } data) {
-				// calculate star amount
-				double fullStarCount = 5 * data["score"]?.Value<double>() ?? 0;
-				double emptyStarCount = 5 - fullStarCount;
-				
-				// concatinate star characters to string
-				string s = string.Concat(
-					new string(Enumerable.Repeat('\u2605', (int)Math.Round(fullStarCount)).ToArray()),
-					new string(Enumerable.Repeat('\u2606', (int)Math.Round(emptyStarCount)).ToArray()));
-				
-				eb.AddField("Votes", s, true);
-				eb.AddField("Upvotes", data["votes_up"]?.Value<int>(), true);
-				eb.AddField("Downvotes", data["votes_down"]?.Value<int>(), true);
-			}
-			
-			eb.AddField("Mod Side", modData.modside);
-			eb.AddField("tModLoader Version", modData.tmodloaderVersion);
-
-			eb.AddField("Last updated", $"<t:{modData.timeUpdated}:d>", true);
-			eb.AddField("Time created", $"<t:{modData.timeCreated}:d>", true);
-
-			// if tags are present
-			if (modJData["tags"] is { } tags)
+			try
 			{
-				eb.AddField("Tags", string.Join(", ", tags?.Select(x => x["display_name"].Value<string>())));
-			}
+				modName = modName.RemoveWhitespace();
+				string modJson = await ModService.DownloadSingleData(modName);
+				JObject modJData;
+				try
+				{
+					modJData = JObject.Parse(modJson); // parse json string
+				}
+				catch
+				{
+					await ReplyAsync(modJson);
+					return;
+				}
 
-			eb.AddField("Homepage", modData.homepage);
-			
-			await ReplyAsync("", embed: eb.Build());
+				// parse json into object
+				var modData = new
+				{
+					displayName = modJData["display_name"]?.Value<string>(),
+					internalName = modJData["internal_name"]?.Value<string>(),
+					modID = modJData["mod_id"]?.Value<string>(),
+					version = modJData["version"]?.Value<string>(),
+					workshopIconURL = modJData["workshop_icon_url"]?.Value<string>(),
+					author = modJData["author"]?.Value<string>(),
+					authorID = modJData["author_id"]?.Value<string>(),
+					downloads = modJData["downloads_total"]?.Value<int>(),
+					views = modJData["views"]?.Value<int>(),
+					favorited = modJData["favorited"]?.Value<int>(),
+					playtime = modJData["playtime"]?.Value<string>(),
+					voteData = modJData["vote_data"]?.Value<JToken>(),
+					modside = modJData["modside"]?.Value<string>(),
+					tmodloaderVersion = modJData["tmodloader_version"]?.Value<string>(),
+					timeCreated = modJData["time_created"]?.Value<int>(),
+					timeUpdated = modJData["time_updated"]?.Value<int>(),
+					homepage = modJData["homepage"]?.Value<string>()
+				};
+
+				// create embed
+				var eb = new EmbedBuilder()
+					.WithTitle($"Mod: {modData.displayName} ({modData.internalName}) {modData.version}")
+					.WithCurrentTimestamp()
+					.WithAuthor(new EmbedAuthorBuilder
+					{
+						IconUrl = Context.Message.Author.GetAvatarUrl(),
+						Name = $"Requested by {Context.Message.Author.FullName()}"
+					})
+					.WithUrl($"https://steamcommunity.com/sharedfiles/filedetails/?id={modData.modID}")
+					.WithThumbnailUrl(modData.workshopIconURL);
+
+				// add fields
+				eb.AddField("Author",
+					$"[{modData.author} ({modData.authorID})]" +
+					$"(https://steamcommunity.com/profiles/{modData.authorID}/)");
+
+				eb.AddField("Downloads", modData.downloads, true);
+				eb.AddField("Views", modData.views, true);
+				eb.AddField("Favorites", modData.favorited, true);
+
+				ulong playtime = ulong.Parse(modData.playtime ?? "0");
+				eb.AddField("Playtime", playtime / 3600_0000 + " hours");
+
+				// if vote data exists
+				if (modData.voteData is { } data)
+				{
+					// calculate star amount
+					double fullStarCount = 5 * data["score"]?.Value<double>() ?? 0;
+					double emptyStarCount = 5 - fullStarCount;
+
+					// concatinate star characters to string
+					string s = string.Concat(
+						new string(Enumerable.Repeat('\u2605', (int)Math.Round(fullStarCount)).ToArray()),
+						new string(Enumerable.Repeat('\u2606', (int)Math.Round(emptyStarCount)).ToArray()));
+
+					eb.AddField("Votes", s, true);
+					eb.AddField("Upvotes", data["votes_up"]?.Value<int>(), true);
+					eb.AddField("Downvotes", data["votes_down"]?.Value<int>(), true);
+				}
+
+				eb.AddField("Mod Side", modData.modside);
+				eb.AddField("tModLoader Version", modData.tmodloaderVersion);
+
+				eb.AddField("Last updated", $"<t:{modData.timeUpdated}:d>", true);
+				eb.AddField("Time created", $"<t:{modData.timeCreated}:d>", true);
+
+				// if tags are present
+				if (modJData["tags"] is { } tags)
+				{
+					eb.AddField("Tags", string.Join(", ", tags?.Select(x => x["display_name"].Value<string>())));
+				}
+
+				if (!string.IsNullOrEmpty(modData.homepage))
+				{
+					eb.AddField("Homepage", modData.homepage);
+				}
+
+				var embed = eb.Build();
+
+				await ReplyAsync("", embed: embed);
+			}
+			catch 
+			{
+				await ReplyAsync("an error occured generating the embed");
+			}
 		}
 
 		// Helper method
