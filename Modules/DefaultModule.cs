@@ -446,7 +446,7 @@ namespace tModloaderDiscordBot.Modules
 		{
 			try
 			{
-				var authorJson = await AuthorService.DownloadSingleLegacyData(steamID);
+				string authorJson = await AuthorService.DownloadSingleLegacyData(steamID);
 				JObject authorJData;
 				try
 				{
@@ -480,9 +480,9 @@ namespace tModloaderDiscordBot.Modules
 					});
 					//.WithUrl($"https://steamcommunity.com/profiles/{authorData.steamID}/");
 
-				eb.AddField("Total mod count", authorData.total ?? 0);
-				eb.AddField("Total downloads count", authorData.downloadsTotal ?? 0);
-				eb.AddField("Daily download count", authorData.downloadsYesterday ?? 0);
+				eb.AddField("Total mod count", authorData.total ?? 0, true);
+				eb.AddField("Total downloads count", authorData.downloadsTotal ?? 0, true);
+				eb.AddField("Daily download count", authorData.downloadsYesterday ?? 0, true);
 
 				string mods = string.Join(", ", authorData.mods
 					.Select(mod => mod?["display_name"]?.Value<string>()));
@@ -515,7 +515,7 @@ namespace tModloaderDiscordBot.Modules
 		{
 			try
 			{
-				var authorJson = await AuthorService.DownloadSingleData(steamID);
+				string authorJson = await AuthorService.DownloadSingleData(steamID);
 				JObject authorJData;
 				try
 				{
@@ -550,9 +550,9 @@ namespace tModloaderDiscordBot.Modules
 					.WithUrl($"https://steamcommunity.com/profiles/{authorData.steamID}/");
 
 				eb.AddField("Total mod Count", authorData.total ?? 0);
-				eb.AddField("Total downloads Count", authorData.totalDownloads ?? 0);
-				eb.AddField("Total view Count", authorData.totalViews ?? 0);
-				eb.AddField("Total favorites Count", authorData.totalFavorites);
+				eb.AddField("Total downloads Count", authorData.totalDownloads ?? 0, true);
+				eb.AddField("Total view Count", authorData.totalViews ?? 0, true);
+				eb.AddField("Total favorites Count", authorData.totalFavorites, true);
 
 				string mods = string.Join(", ", authorData.mods
 					.Select(mod =>
