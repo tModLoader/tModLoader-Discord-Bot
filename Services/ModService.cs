@@ -11,6 +11,7 @@ namespace tModloaderDiscordBot.Services
 		{
 		}
 		
+		internal const string WidgetUrl = "https://tml-readme-card.repl.co/?v=1.4&modname=";
 		private const string ModInfoUrl = "https://tmlapis.tomat.dev/1.4/mod/";
 		
 		public async Task<string> DownloadSingleData(string name)

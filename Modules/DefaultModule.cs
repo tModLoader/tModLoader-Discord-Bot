@@ -55,6 +55,50 @@ namespace tModloaderDiscordBot.Modules
 				GetDeltaString(elapsed, clientLatency));
 		}
 
+		[Command("widget-legacy")]
+		[Alias("widgetimg-legacy", "widgetimage-legacy")]
+		[Summary("Generates a widget image of specified mod")]
+		[Remarks("widget <mod>\nwidget examplemod")]
+		public async Task LegacyWidget([Remainder]string mod)
+		{
+			mod = mod.RemoveWhitespace();
+			(bool result, string str) = await ShowSimilarMods(mod);
+
+			if (!result)
+			{
+				await ReplyAsync($"No mod with the name '{mod}' found!");
+				return;
+			}
+
+			string modFound = LegacyModService.Mods.FirstOrDefault(x => x.EqualsIgnoreCase(mod));
+
+			if (modFound == null)
+			{
+				await ReplyAsync($"No mod with the name '{mod}' found!");
+				return;
+			}
+
+			var msg = await ReplyAsync($"Generating widget for {modFound}...");
+
+			// need perfect string.
+
+			using var client = new System.Net.Http.HttpClient();
+			
+			byte[] response = await client.GetByteArrayAsync($"{LegacyModService.WidgetUrl}{modFound}");
+			if (response == null)
+			{
+				await ReplyAsync($"Unable to create the widget");
+				return;
+			}
+			
+			using (var stream = new MemoryStream(response))
+			{
+				await Context.Channel.SendFileAsync(stream, $"widget-{modFound}.png");
+			}
+
+			await msg.DeleteAsync();
+		}
+		
 		[Command("widget")]
 		[Alias("widgetimg", "widgetimage")]
 		[Summary("Generates a widget image of specified mod")]
@@ -62,30 +106,41 @@ namespace tModloaderDiscordBot.Modules
 		public async Task Widget([Remainder]string mod)
 		{
 			mod = mod.RemoveWhitespace();
-			var (result, str) = await ShowSimilarMods(mod);
+			(bool result, string str) = await ShowSimilarMods(mod);
 
-			if (result)
+			if (!result)
 			{
-				var modFound = LegacyModService.Mods.FirstOrDefault(x => x.EqualsIgnoreCase(mod));
-
-				if (modFound != null)
-				{
-					var msg = await ReplyAsync($"Generating widget for {modFound}...");
-
-					// need perfect string.
-
-					using (var client = new System.Net.Http.HttpClient())
-					{
-						var response = await client.GetByteArrayAsync($"{LegacyModService.WidgetUrl}{modFound}");
-						using (var stream = new MemoryStream(response))
-						{
-							await Context.Channel.SendFileAsync(stream, $"widget-{modFound}.png");
-						}
-					}
-					await msg.DeleteAsync();
-				}
+				await ReplyAsync($"No mod with the name '{mod}' found!");
+				return;
 			}
 
+			string modFound = LegacyModService.Mods.FirstOrDefault(x => x.EqualsIgnoreCase(mod));
+
+			if (modFound == null)
+			{
+				await ReplyAsync($"No mod with the name '{mod}' found!");
+				return;
+			}
+
+			var msg = await ReplyAsync($"Generating widget for {modFound}...");
+
+			// need perfect string.
+
+			using var client = new System.Net.Http.HttpClient();
+			
+			byte[] response = await client.GetByteArrayAsync($"{ModService.WidgetUrl}{modFound}");
+			if (response == null)
+			{
+				await ReplyAsync($"Unable to create the widget");
+				return;
+			}
+			
+			using (var stream = new MemoryStream(response))
+			{
+				await Context.Channel.SendFileAsync(stream, $"widget-{modFound}.png");
+			}
+
+			await msg.DeleteAsync();
 		}
 
 		[Command("wikis")]
