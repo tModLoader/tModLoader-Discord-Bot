@@ -143,6 +143,46 @@ namespace tModloaderDiscordBot.Modules
 			await msg.DeleteAsync();
 		}
 
+		private async Task GenerateAuthorWidget(string steamid, string widgetUrl)
+		{
+			steamid = steamid.RemoveWhitespace();
+			var msg = await ReplyAsync($"Generating widget for {steamid}...");
+			
+			using var client = new System.Net.Http.HttpClient();
+			
+			byte[] response = await client.GetByteArrayAsync($"{widgetUrl}{steamid}");
+			if (response == null)
+			{
+				await ReplyAsync($"Unable to create the widget");
+				return;
+			}
+			
+			using (var stream = new MemoryStream(response))
+			{
+				await Context.Channel.SendFileAsync(stream, $"widget-{steamid}.png");
+			}
+
+			await msg.DeleteAsync();
+		}
+		
+		[Command("author-widget")]
+		[Alias("author-widgetimg", "author-widgetimage")]
+		[Summary("Generates a widget image of the specified author")]
+		[Remarks("author-widget <steamid64>\nauthor-widget 76561198278789341")]
+		public async Task AuthorWidget([Remainder]string steamid)
+		{
+			await GenerateAuthorWidget(steamid, AuthorService.WidgetUrl);
+		}
+		
+		[Command("author-widget-legacy")]
+		[Alias("author-widgetimg-legacy", "author-widgetimage-legacy")]
+		[Summary("Generates a widget image of the specified author")]
+		[Remarks("author-widget-legacy <steamid64>\nauthor-widget-legacy 76561198278789341")]
+		public async Task LegacyAuthorWidget([Remainder]string steamid)
+		{
+			await GenerateAuthorWidget(steamid, AuthorService.LegacyWidgetUrl);
+		}
+
 		[Command("wikis")]
 		[Alias("ws")]
 		[Summary("Generates a search for a term in tModLoader wiki")]
