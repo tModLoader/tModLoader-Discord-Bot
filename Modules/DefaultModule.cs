@@ -56,7 +56,7 @@ namespace tModloaderDiscordBot.Modules
 		}
 
 		[Command("widget-legacy")]
-		[Alias("widgetimg-legacy", "widgetimage-legacy")]
+		[Alias("widgetimg-legacy", "widgetimage-legacy", "widget13")]
 		[Summary("Generates a widget image of specified mod")]
 		[Remarks("widget <mod>\nwidget examplemod")]
 		public async Task LegacyWidget([Remainder]string mod)
@@ -175,7 +175,7 @@ namespace tModloaderDiscordBot.Modules
 		}
 		
 		[Command("author-widget-legacy")]
-		[Alias("author-widgetimg-legacy", "author-widgetimage-legacy")]
+		[Alias("author-widgetimg-legacy", "author-widgetimage-legacy", "author-widget13")]
 		[Summary("Generates a widget image of the specified author")]
 		[Remarks("author-widget-legacy <steamid64>\nauthor-widget-legacy 76561198278789341")]
 		public async Task LegacyAuthorWidget([Remainder]string steamid)
@@ -336,7 +336,7 @@ namespace tModloaderDiscordBot.Modules
 		}
 
 		[Command("mod-legacy")]
-		[Alias("modinfo-legacy")]
+		[Alias("modinfo-legacy", "mod13")]
 		[Summary("Shows info about a mod")]
 		[Remarks("mod <internal modname> --OR-- mod <part of name>\nmod examplemod")]
 		[Priority(-99)]
@@ -535,7 +535,7 @@ namespace tModloaderDiscordBot.Modules
 		}
 
 		[Command("author-legacy")]
-		[Alias("authorinfo-legacy")]
+		[Alias("authorinfo-legacy", "author13")]
 		[Summary("Shows info about an author")]
 		[Remarks("author <steamid64 or steam name (not reliable)> \nauthor NotLe0n")]
 		[Priority(-99)]
