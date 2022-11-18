@@ -440,7 +440,7 @@ namespace tModloaderDiscordBot.Modules
 				}
 				catch
 				{
-					await ReplyAsync("an error occured when parsing JSON");
+					await ReplyAsync($"A mod with the name \"{modName}\" was not found.");
 					Console.WriteLine($"{nameof(DefaultModule)}.{nameof(Mod)}: Error when parsing json. Server response was:\n{modJson}");
 					return;
 				}
@@ -552,7 +552,7 @@ namespace tModloaderDiscordBot.Modules
 				}
 				catch
 				{
-					await ReplyAsync("an error occured when parsing JSON");
+					await ReplyAsync($"An author with the ID \"{steamID}\" was not found.");
 					Console.WriteLine($"{nameof(DefaultModule)}.{nameof(LegacyAuthor)}: Error when parsing json. Server response was:\n{authorJson}");
 					return;
 				}
@@ -626,9 +626,9 @@ namespace tModloaderDiscordBot.Modules
 				{
 					authorJData = JObject.Parse(authorJson);
 				}
-				catch (Exception e)
+				catch
 				{
-					await ReplyAsync("an error occured when parsing JSON");
+					await ReplyAsync($"An author with the ID \"{steamID}\" was not found.");
 					Console.WriteLine($"{nameof(DefaultModule)}.{nameof(Author)}: Error when parsing json. Server response was:\n{authorJson}");
 					return;
 				}
