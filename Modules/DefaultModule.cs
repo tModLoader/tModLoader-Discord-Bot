@@ -469,7 +469,6 @@ namespace tModloaderDiscordBot.Modules
 					downloads = modJData["downloads_total"]?.Value<int>(),
 					views = modJData["views"]?.Value<int>(),
 					favorited = modJData["favorited"]?.Value<int>(),
-					playtime = modJData["playtime"]?.Value<string>(),
 					voteData = modJData["vote_data"]?.Value<JToken>(),
 					modside = modJData["modside"]?.Value<string>(),
 					tmodloaderVersion = modJData["tmodloader_version"]?.Value<string>(),
@@ -498,9 +497,6 @@ namespace tModloaderDiscordBot.Modules
 				eb.AddField("Downloads", $"{modData.downloads:n0}", true);
 				eb.AddField("Views", $"{modData.views:n0}", true);
 				eb.AddField("Favorites", $"{modData.favorited:n0}", true);
-
-				ulong playtime = ulong.Parse(modData.playtime ?? "0");
-				eb.AddField("Playtime", playtime / 3600_0000 + " hours");
 
 				// if vote data exists
 				if (modData.voteData is { } data)
