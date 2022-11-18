@@ -64,38 +64,26 @@ namespace tModloaderDiscordBot.Modules
 		{
 			mod = mod.RemoveWhitespace();
 			(bool result, string str) = await ShowSimilarMods(mod);
-
-			if (!result)
-			{
-				await ReplyAsync($"No mod with the name '{mod}' found!");
-				return;
-			}
-
+			
 			string modFound = LegacyModService.Mods.FirstOrDefault(x => x.EqualsIgnoreCase(mod));
-
 			if (modFound == null)
 			{
-				await ReplyAsync($"No mod with the name '{mod}' found!");
 				return;
 			}
 
 			var msg = await ReplyAsync($"Generating widget for {modFound}...");
-
-			// need perfect string.
-
-			using var client = new System.Net.Http.HttpClient();
 			
+			using var client = new System.Net.Http.HttpClient();
 			byte[] response = await client.GetByteArrayAsync($"{LegacyModService.WidgetUrl}{modFound}");
 			if (response == null)
 			{
 				await ReplyAsync($"Unable to create the widget");
+				await msg.DeleteAsync();
 				return;
 			}
-			
-			using (var stream = new MemoryStream(response))
-			{
-				await Context.Channel.SendFileAsync(stream, $"widget-{modFound}.png");
-			}
+
+			using var stream = new MemoryStream(response);
+			await Context.Channel.SendFileAsync(stream, $"widget-{modFound}.png");
 
 			await msg.DeleteAsync();
 		}
@@ -107,72 +95,68 @@ namespace tModloaderDiscordBot.Modules
 		public async Task Widget([Remainder]string mod)
 		{
 			mod = mod.RemoveWhitespace();
-			(bool result, string str) = await ShowSimilarMods(mod);
-
-			if (!result)
-			{
-				await ReplyAsync($"No mod with the name '{mod}' found!");
-				return;
-			}
-
-			string modFound = LegacyModService.Mods.FirstOrDefault(x => x.EqualsIgnoreCase(mod));
-
-			if (modFound == null)
-			{
-				await ReplyAsync($"No mod with the name '{mod}' found!");
-				return;
-			}
-
-			var msg = await ReplyAsync($"Generating widget for {modFound}...");
-
-			// need perfect string.
 
 			using var client = new System.Net.Http.HttpClient();
+			byte[] response;
 			
-			byte[] response = await client.GetByteArrayAsync($"{ModService.WidgetUrl}{modFound}");
-			if (response == null)
+			var msg = await ReplyAsync($"Generating widget for {mod}...");
+			try
 			{
-				await ReplyAsync($"Unable to create the widget");
+				response = await client.GetByteArrayAsync($"{ModService.WidgetUrl}{mod}");
+				if (response == null)
+				{
+					await ReplyAsync($"Unable to create the widget");
+					return;
+				}
+			}
+			catch
+			{
+				await ReplyAsync($"No mod with the name '{mod}' found!");
+				await msg.DeleteAsync();
 				return;
 			}
 			
-			using (var stream = new MemoryStream(response))
-			{
-				await Context.Channel.SendFileAsync(stream, $"widget-{modFound}.png");
-			}
+			using var stream = new MemoryStream(response);
+			await Context.Channel.SendFileAsync(stream, $"widget-{mod}.png");
 
 			await msg.DeleteAsync();
 		}
 
-		private async Task GenerateAuthorWidget(string steamid, string widgetUrl)
-		{
-			steamid = steamid.RemoveWhitespace();
-			var msg = await ReplyAsync($"Generating widget for {steamid}...");
-			
-			using var client = new System.Net.Http.HttpClient();
-			
-			byte[] response = await client.GetByteArrayAsync($"{widgetUrl}{steamid}");
-			if (response == null)
-			{
-				await ReplyAsync($"Unable to create the widget");
-				return;
-			}
-			
-			using (var stream = new MemoryStream(response))
-			{
-				await Context.Channel.SendFileAsync(stream, $"widget-{steamid}.png");
-			}
-
-			await msg.DeleteAsync();
-		}
-		
 		[Command("author-widget")]
 		[Alias("author-widgetimg", "author-widgetimage")]
 		[Summary("Generates a widget image of the specified author")]
 		[Remarks("author-widget <steamid64>\nauthor-widget 76561198278789341")]
 		public async Task AuthorWidget([Remainder]string steamid)
 		{
-			await GenerateAuthorWidget(steamid, AuthorService.WidgetUrl);
+			steamid = steamid.RemoveWhitespace();
+			
+			using var client = new System.Net.Http.HttpClient();
+			byte[] response;
+			
+			var msg = await ReplyAsync($"Generating widget for {steamid}...");
+			try
+			{
+				response = await client.GetByteArrayAsync($"{AuthorService.WidgetUrl}{steamid}");
+				if (response == null)
+				{
+					await ReplyAsync($"Unable to create the widget");
+					await msg.DeleteAsync();
+
+					return;
+				}
+			}
+			catch
+			{
+				await ReplyAsync($"No mod with the name '{steamid}' found!");
+				await msg.DeleteAsync();
+
+				return;
+			}
+
+			using var stream = new MemoryStream(response);
+			await Context.Channel.SendFileAsync(stream, $"widget-{steamid}.png");
+
+			await msg.DeleteAsync();
 		}
 		
 		[Command("author-widget-legacy")]
@@ -181,7 +165,34 @@ namespace tModloaderDiscordBot.Modules
 		[Remarks("author-widget-legacy <steamid64>\nauthor-widget-legacy 76561198278789341")]
 		public async Task LegacyAuthorWidget([Remainder]string steamid)
 		{
-			await GenerateAuthorWidget(steamid, AuthorService.LegacyWidgetUrl);
+			steamid = steamid.RemoveWhitespace();
+			var msg = await ReplyAsync($"Generating widget for {steamid}...");
+			
+			using var client = new System.Net.Http.HttpClient();
+			byte[] response;
+			try
+			{
+				response = await client.GetByteArrayAsync($"{AuthorService.LegacyWidgetUrl}{steamid}");
+				if (response == null)
+				{
+					await ReplyAsync($"Unable to create the widget");
+					await msg.DeleteAsync();
+
+					return;
+				}
+			}
+			catch
+			{
+				await ReplyAsync($"No mod with the name '{steamid}' found!");
+				await msg.DeleteAsync();
+
+				return;
+			}
+
+			using var stream = new MemoryStream(response);
+			await Context.Channel.SendFileAsync(stream, $"widget-{steamid}.png");
+
+			await msg.DeleteAsync();
 		}
 
 		[Command("wikis")]
