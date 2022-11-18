@@ -15,7 +15,7 @@ namespace tModloaderDiscordBot.Services
 		internal IForumChannel supportForum;
 		internal IThreadChannel supportForumPinnedThread;
 #if TESTBOT
-		private const ulong supportForumId = 1041801595454759052;
+		private const ulong supportForumId = 0;
 #else
 		private const ulong supportForumId = 1019958533355229316;
 #endif
@@ -23,7 +23,7 @@ namespace tModloaderDiscordBot.Services
 		internal ITextChannel supportChannel;
 		private bool _isSetup = false;
 #if TESTBOT
-		private const ulong supportChannelId = 1041801721405505538;
+		private const ulong supportChannelId = 0;
 #else
 		private const ulong supportChannelId = 871289059396448337;
 #endif
@@ -54,9 +54,12 @@ namespace tModloaderDiscordBot.Services
 				{
 					supportChannel = (ITextChannel)_client.GetChannel(supportChannelId);
 					supportForum = (IForumChannel)_client.GetChannel(supportForumId);
-					var activeThreads = await supportForum.GetActiveThreadsAsync();
-					supportForumPinnedThread = activeThreads.FirstOrDefault(x => x.Id == 1019968948738986064);
-					await _loggingService.Log(new LogMessage(LogSeverity.Info, "Support", $"Support pinned post {(supportForumPinnedThread == null ? "not found" : "found")}."));
+					if (supportForum != null)
+					{
+						var activeThreads = await supportForum.GetActiveThreadsAsync();
+						supportForumPinnedThread = activeThreads.FirstOrDefault(x => x.Id == 1019968948738986064);
+						await _loggingService.Log(new LogMessage(LogSeverity.Info, "Support", $"Support pinned post {(supportForumPinnedThread == null ? "not found" : "found")}."));
+					}
 					return true;
 				});
 			return _isSetup;

@@ -10,6 +10,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using tModloaderDiscordBot.Services;
@@ -58,7 +59,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("widget-legacy")]
 		[Alias("widgetimg-legacy", "widgetimage-legacy", "widget13")]
 		[Summary("Generates a widget image of specified mod")]
-		[Remarks("widget <mod>\nwidget examplemod")]
+		[Remarks("widget13 <mod>\nwidget13 examplemod")]
 		public async Task LegacyWidget([Remainder]string mod)
 		{
 			mod = mod.RemoveWhitespace();
@@ -338,7 +339,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("mod-legacy")]
 		[Alias("modinfo-legacy", "mod13")]
 		[Summary("Shows info about a mod")]
-		[Remarks("mod <internal modname> --OR-- mod <part of name>\nmod examplemod")]
+		[Remarks("mod13 <internal modname> --OR-- mod13 <part of name>\nmod13 examplemod")]
 		[Priority(-99)]
 		public async Task LegacyMod([Remainder] string mod)
 		{
@@ -483,9 +484,9 @@ namespace tModloaderDiscordBot.Modules
 					$"[{modData.author} ({modData.authorID})]" +
 					$"(https://steamcommunity.com/profiles/{modData.authorID}/)");
 
-				eb.AddField("Downloads", modData.downloads, true);
-				eb.AddField("Views", modData.views, true);
-				eb.AddField("Favorites", modData.favorited, true);
+				eb.AddField("Downloads", $"{modData.downloads:n0}", true);
+				eb.AddField("Views", $"{modData.views:n0}", true);
+				eb.AddField("Favorites", $"{modData.favorited:n0}", true);
 
 				ulong playtime = ulong.Parse(modData.playtime ?? "0");
 				eb.AddField("Playtime", playtime / 3600_0000 + " hours");
@@ -537,7 +538,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("author-legacy")]
 		[Alias("authorinfo-legacy", "author13")]
 		[Summary("Shows info about an author")]
-		[Remarks("author <steamid64 or steam name (not reliable)> \nauthor NotLe0n")]
+		[Remarks("author13 <steamid64 or steam name (not reliable)> \nauthor13 NotLe0n")]
 		[Priority(-99)]
 		public async Task LegacyAuthor([Remainder] string steamID)
 		{
@@ -615,6 +616,11 @@ namespace tModloaderDiscordBot.Modules
 			try
 			{
 				string authorJson = await AuthorService.DownloadSingleData(steamID);
+				if(authorJson.StartsWith("No steamid found"))
+				{
+					await ReplyAsync(authorJson);
+					return;
+				}
 				JObject authorJData;
 				try
 				{
@@ -654,13 +660,32 @@ namespace tModloaderDiscordBot.Modules
 				eb.AddField("Total view Count", authorData.totalViews ?? 0, true);
 				eb.AddField("Total favorites Count", authorData.totalFavorites, true);
 
+				/* Field max is 1024
 				string mods = string.Join(", ", authorData.mods
 					.Select(mod =>
 						$"[{mod?["display_name"]?.Value<string>()}]" +
 						$"(https://steamcommunity.com/sharedfiles/filedetails/?id={mod?["mod_id"]?.Value<string>()})"));
+				*/
 
+				var modsSB = new StringBuilder();
+				bool first = true;
+				foreach (var mod in authorData.mods)
+				{
+					string modLink = $"[{mod?["display_name"]?.Value<string>()}]" + $"(https://steamcommunity.com/sharedfiles/filedetails/?id={mod?["mod_id"]?.Value<string>()})";
+					if (modsSB.Length + modLink.Length > 1000)
+					{
+						modsSB.Append(" ...And more");
+						break;
+					}
+					if (!first)
+					{
+						modsSB.Append(", ");
+					}
+					first = false;
+					modsSB.Append(modLink);
+				}
 
-				eb.AddField("Mods", mods);
+				eb.AddField("Mods", modsSB.ToString());
 
 				var embed = eb.Build();
 				await ReplyAsync("", embed: embed);
