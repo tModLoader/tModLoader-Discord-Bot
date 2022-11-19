@@ -147,7 +147,7 @@ namespace tModloaderDiscordBot.Modules
 			}
 			catch
 			{
-				await ReplyAsync($"No mod with the name '{steamid}' found!");
+				await ReplyAsync($"No author with the name or ID '{steamid}' found!");
 				await msg.DeleteAsync();
 
 				return;
@@ -183,7 +183,7 @@ namespace tModloaderDiscordBot.Modules
 			}
 			catch
 			{
-				await ReplyAsync($"No mod with the name '{steamid}' found!");
+				await ReplyAsync($"No author with the name or ID '{steamid}' found!");
 				await msg.DeleteAsync();
 
 				return;
@@ -547,7 +547,7 @@ namespace tModloaderDiscordBot.Modules
 
 				var authorData = new
 				{
-					//steamID = authorJData["steam_id"]?.Value<string>(),
+					steamID = authorJData["steam_id"]?.Value<string>(),
 					steamName = authorJData["steam_name"]?.Value<string>(),
 					total = authorJData["total"]?.Value<int>(),
 					downloadsTotal = authorJData["downloads_total"]?.Value<int>(),
@@ -564,8 +564,8 @@ namespace tModloaderDiscordBot.Modules
 					{
 						IconUrl = Context.Message.Author.GetAvatarUrl(),
 						Name = $"Requested by {Context.Message.Author.FullName()}"
-					});
-					//.WithUrl($"https://steamcommunity.com/profiles/{authorData.steamID}/");
+					})
+					.WithUrl($"https://steamcommunity.com/profiles/{authorData.steamID}/");
 
 				eb.AddField("Total mod count", authorData.total ?? 0, true);
 				eb.AddField("Total downloads count", authorData.downloadsTotal ?? 0, true);
@@ -574,10 +574,10 @@ namespace tModloaderDiscordBot.Modules
 				string mods = string.Join(", ", authorData.mods
 					.Select(mod => mod?["display_name"]?.Value<string>()));
 				
-				eb.AddField("Mods", mods);
+				eb.AddField("Mods", authorData.mods.Any() ? mods : "No mods");
 
-				
-				if (authorData.maintainedMods.Count() != 0) {
+
+				if (authorData.maintainedMods.Any()) {
 					string maintainedMods = string.Join(", ", authorData.maintainedMods
 						.Select(mod => mod?["internal_name"]?.Value<string>()));
 
