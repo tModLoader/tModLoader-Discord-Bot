@@ -26,7 +26,7 @@ namespace tModloaderDiscordBot.Services
 		internal const string HotUrl = "http://javid.ddns.net/tModLoader/tools/hottop10.php";
 		internal const string NewestReleaseUrl = "https://api.github.com/repos/tModLoader/tModLoader/releases/latest";
 
-		private static string ModDir => "mods";
+		private static string ModDir => "mods/1.3";
 		internal static string tMLVersion;
 
 		public static string ModPath(string modname) =>
@@ -37,7 +37,7 @@ namespace tModloaderDiscordBot.Services
 				.Select(x => Path.GetFileNameWithoutExtension(x).RemoveWhitespace());
 
 		private static SemaphoreSlim _semaphore;
-		//private static Timer _updateTimer;
+		private static Timer _updateTimer;
 
 		public LegacyModService(IServiceProvider services) : base(services)
 		{
@@ -55,21 +55,19 @@ namespace tModloaderDiscordBot.Services
 			tMLVersion = $"tModLoader v0.11.8.8";
 			_semaphore = new SemaphoreSlim(1, 1);
 
-			//if (_updateTimer == null)
-			//{
-			//	_updateTimer = new Timer(async (e) =>
-			//	{
-			//		await Log("Running maintenance from 6 hour timer");
-			//		await Maintain(_client);
-			//	},
-			//	null, TimeSpan.FromHours(6), TimeSpan.FromHours(6));
-			//}
+			_updateTimer ??= new Timer(UpdateMods, null, TimeSpan.FromHours(6), TimeSpan.FromHours(6));
 			return this;
 		}
 
+		private async void UpdateMods(object state)
+		{
+			await Log("Running 1.3 maintenance from 6 hour timer");
+			await Maintain();
+		}
+		
 		public async Task Maintain()
 		{
-			await Log("Starting maintenance");
+			await Log("Starting 1.3 maintenance");
 			// Create dirs
 			Directory.CreateDirectory(ModDir);
 
@@ -83,12 +81,11 @@ namespace tModloaderDiscordBot.Services
 				var parsedBinary = long.Parse(savedBinary);
 				var savedBinaryDate = BotUtils.DateTimeFromUnixTimestampSeconds(parsedBinary);
 				dateDiff = BotUtils.DateTimeFromUnixTimestampSeconds(BotUtils.GetCurrentUnixTimestampSeconds()) - savedBinaryDate;
-				await Log($"Read date difference for mod cache update: {dateDiff}");
+				await Log($"Read date difference for 1.3 mod cache update: {dateDiff}");
 			}
 
 			// Needs to maintain data
-			if (dateDiff == TimeSpan.MinValue
-				|| dateDiff.TotalHours > 5.99d)
+			if (dateDiff == TimeSpan.MinValue || dateDiff.TotalHours > 5.99d)
 			{
 				await Log($"Maintenance determined: over 6 hours. Updating...");
 				var data = await DownloadData();
@@ -125,17 +122,17 @@ namespace tModloaderDiscordBot.Services
 
 		public async Task<bool> TryCacheMod(string name)
 		{
-			await Log($"Attempting to update cache for mod {name}");
+			await Log($"Attempting to update cache for 1.3 mod {name}");
 			var data = await DownloadSingleData(name);
 			if (data.StartsWith("Failed:"))
 			{
-				await Log($"Cache update for mod {name} failed");
+				await Log($"Cache update for 1.3 mod {name} failed");
 				return false;
 			}
 
 			var mod = JObject.Parse(data);
 			await FileUtils.FileWriteAsync(_semaphore, Path.Combine(ModDir, $"{mod.SelectToken("name").ToObject<string>()}.json"), mod.ToString(Formatting.Indented));
-			await Log($"Cache update for mod {name} succeeded");
+			await Log($"Cache update for 1.3 mod {name} succeeded");
 			return true;
 		}
 

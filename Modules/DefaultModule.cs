@@ -425,18 +425,15 @@ namespace tModloaderDiscordBot.Modules
 			try
 			{
 				modName = modName.RemoveWhitespace();
-				string modJson = await ModService.DownloadSingleData(modName);
-				JObject modJData;
-				try
-				{
-					modJData = JObject.Parse(modJson); // parse json string
-				}
-				catch
+				bool modFound = await ModService.TryCacheMod(modName);
+
+				if (!modFound)
 				{
 					await ReplyAsync($"A mod with the name \"{modName}\" was not found.");
-					Console.WriteLine($"{nameof(DefaultModule)}.{nameof(Mod)}: Error when parsing json. Server response was:\n{modJson}");
 					return;
 				}
+				
+				var modJData = JObject.Parse(await FileUtils.FileReadToEndAsync(new SemaphoreSlim(1, 1), ModService.ModPath(modName)));
 
 				// parse json into object
 				var modData = new

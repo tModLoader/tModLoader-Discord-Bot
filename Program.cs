@@ -124,6 +124,7 @@ namespace tModloaderDiscordBot
 
 			await _services.GetRequiredService<GuildConfigService>().SetupAsync();
 			await _services.GetRequiredService<SiteStatusService>().UpdateAsync();
+			await _services.GetRequiredService<ModService>().Initialize().Maintain();
 			await _services.GetRequiredService<LegacyModService>().Initialize().Maintain();
 			//await _reactionRoleService.Maintain(_client);
 
