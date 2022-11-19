@@ -478,10 +478,10 @@ namespace tModloaderDiscordBot.Modules
 				eb.AddField("Favorites", $"{modData.favorited:n0}", true);
 
 				// if vote data exists
-				if (modData.voteData is { } data)
+				if (modData.voteData.HasValues)
 				{
 					// calculate star amount
-					double fullStarCount = 5 * data["score"]?.Value<double>() ?? 0;
+					double fullStarCount = 5 * modData.voteData["score"]?.Value<double>() ?? 0;
 					double emptyStarCount = 5 - fullStarCount;
 
 					// concatinate star characters to string
@@ -490,8 +490,8 @@ namespace tModloaderDiscordBot.Modules
 						new string(Enumerable.Repeat('\u2606', (int)Math.Round(emptyStarCount)).ToArray()));
 
 					eb.AddField("Votes", s, true);
-					eb.AddField("Upvotes", data["votes_up"]?.Value<int>(), true);
-					eb.AddField("Downvotes", data["votes_down"]?.Value<int>(), true);
+					eb.AddField("Upvotes", modData.voteData["votes_up"]?.Value<int>(), true);
+					eb.AddField("Downvotes", modData.voteData["votes_down"]?.Value<int>(), true);
 				}
 
 				eb.AddField("Mod Side", modData.modside);
@@ -501,9 +501,11 @@ namespace tModloaderDiscordBot.Modules
 				eb.AddField("Time created", $"<t:{modData.timeCreated}:d>", true);
 
 				// if tags are present
-				if (modJData["tags"] is { } tags)
+				if (modJData["tags"].HasValues)
 				{
-					eb.AddField("Tags", string.Join(", ", tags?.Select(x => x["display_name"].Value<string>())));
+					var tags = modJData["tags"];
+					var tagNames = tags?.Select(x => x["display_name"].Value<string>());
+					eb.AddField("Tags", string.Join(", ", tagNames));
 				}
 
 				if (!string.IsNullOrEmpty(modData.homepage))
