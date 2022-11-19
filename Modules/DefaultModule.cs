@@ -162,7 +162,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("author-widget-legacy")]
 		[Alias("author-widgetimg-legacy", "author-widgetimage-legacy", "author-widget13")]
 		[Summary("Generates a widget image of the specified author")]
-		[Remarks("author-widget-legacy <steamid64>\nauthor-widget-legacy 76561198278789341")]
+		[Remarks("author-widget13 <steamid64>\nauthor-widget13 76561198278789341")]
 		public async Task LegacyAuthorWidget([Remainder]string steamid)
 		{
 			steamid = steamid.RemoveWhitespace();
@@ -226,24 +226,6 @@ namespace tModloaderDiscordBot.Modules
 			searchTerm = searchTerm.Trim();
 			var encoded = WebUtility.UrlEncode(searchTerm);
 			await ReplyAsync($"Microsoft docs for {searchTerm}: <https://docs.microsoft.com/en-us/search/?scope=.NET&terms={encoded}>");
-		}
-
-		[Command("ranksbysteamid")]
-		[Alias("ranksbyauthor", "listmods")]
-		[Summary("Generates a link for the ranksbysteamid of the steamid64 provided.")]
-		[Remarks("ranksbysteamid <steam64id>\ranksbysteamid 76561198422040054")]
-		public async Task RanksBySteamID([Remainder]string steamid64)
-		{
-			steamid64 = steamid64.Trim();
-			if (steamid64.Length == 17 && steamid64.All(c => c >= '0' && c <= '9'))
-			{
-				string encoded = WebUtility.UrlEncode(steamid64);
-				await ReplyAsync($"tModLoader ranks by steamid results for {steamid64}: <http://javid.ddns.net/tModLoader/tools/ranksbysteamid.php?steamid64={encoded}>");
-			}
-			else
-				await ReplyAsync($"\"{steamid64}\" is not a valid steamid64");
-
-			// Todo: allow users to register their username under a steamid64 and allow username to be used here.
 		}
 
 		// Current classes documented on the Wiki
@@ -436,7 +418,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("mod")]
 		[Alias("modinfo")]
 		[Summary("Shows info about a mod")]
-		[Remarks("mod <internal modname or mod id> \nmod examplemod")]
+		[Remarks("mod <internal modname or mod id> \n`mod 2831018225` --OR-- `mod examplemod`")]
 		[Priority(-99)]
 		public async Task Mod([Remainder] string modName)
 		{
@@ -545,7 +527,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("author-legacy")]
 		[Alias("authorinfo-legacy", "author13")]
 		[Summary("Shows info about an author")]
-		[Remarks("author13 <steamid64 or steam name (not reliable)> \nauthor13 NotLe0n")]
+		[Remarks("author13 <steamid64 or steam name (not reliable)>\n`author13 76561198278789341` --OR-- `author13 NotLe0n`")]
 		[Priority(-99)]
 		public async Task LegacyAuthor([Remainder] string steamID)
 		{
@@ -616,7 +598,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("author")]
 		[Alias("authorinfo")]
 		[Summary("Shows info about an author")]
-		[Remarks("author <steamid64 or steam name (not reliable)> \nauthor NotLe0n")]
+		[Remarks("author <steamid64 or steam name (not reliable)> \n`author 76561198278789341` --OR-- `author NotLe0n`")]
 		[Priority(-99)]
 		public async Task Author([Remainder] string steamID)
 		{
