@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,7 +29,11 @@ namespace tModloaderDiscordBot.Services
 		
 		public static string ModPath(string modname) =>
 			Path.Combine(ModDir, $"{modname}.json");
-		
+
+		public static IEnumerable<string> Mods =>
+			Directory.GetFiles(ModDir, "*.json")
+				.Select(x => Path.GetFileNameWithoutExtension(x).RemoveWhitespace());
+
 		public ModService Initialize()
 		{
 			_semaphore = new SemaphoreSlim(1, 1);
