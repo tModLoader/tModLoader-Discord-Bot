@@ -24,7 +24,7 @@ namespace tModloaderDiscordBot.Modules
 		{
 			var _client = services.GetRequiredService<DiscordSocketClient>();
 
-			_client.ReactionAdded += HandleReactionAdded;
+			_client.ReactionAdded += ReactionHandler;
 		}
 
 		public GuildTagService TagService { get; set; }
@@ -288,26 +288,20 @@ namespace tModloaderDiscordBot.Modules
 			}
 		}
 
-		private async Task HandleReactionAdded(Cacheable<IUserMessage, ulong> message, ISocketMessageChannel channel, SocketReaction reaction)
+		private async Task ReactionHandler(Cacheable<IUserMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
 		{
-			bool delete = false;
 			if (DeleteableTags.TryGetValue(message.Id, out Tuple<ulong, ulong> originalMessageAuthorAndMessage) && reaction.User.Value is SocketGuildUser reactionUser)
 			{
-				if(originalMessageAuthorAndMessage.Item1 == reactionUser.Id && reaction.Emote.Equals(new Emoji("❌")))
+				if (originalMessageAuthorAndMessage.Item1 == reactionUser.Id && reaction.Emote.Equals(new Emoji("❌")))
 				{
-					delete = true;
+					DeleteableTags.Remove(message.Id);
+					/* Not working, but it shouldn't matter, they should already be deleted.
+					IMessage originalTagRequestMessage = await channel.GetMessageAsync(originalMessageAuthorAndMessage.Item2);
+					if(originalTagRequestMessage!= null)
+						await originalTagRequestMessage.DeleteAsync();
+					*/
+					await (await message.GetOrDownloadAsync()).DeleteAsync();
 				}
-			}
-
-			if (delete)
-			{
-				DeleteableTags.Remove(message.Id);
-				/* Not working, but it shouldn't matter, they should already be deleted.
-				IMessage originalTagRequestMessage = await channel.GetMessageAsync(originalMessageAuthorAndMessage.Item2);
-				if(originalTagRequestMessage!= null)
-					await originalTagRequestMessage.DeleteAsync();
-				*/
-				await (await message.GetOrDownloadAsync()).DeleteAsync();
 			}
 		}
 	}

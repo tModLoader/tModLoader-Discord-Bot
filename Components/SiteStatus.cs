@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace tModloaderDiscordBot.Components
@@ -49,21 +50,24 @@ namespace tModloaderDiscordBot.Components
 				addr = $"http://{addr}";
 		}
 
-		public void Revalidate()
+		public Task Revalidate()
 		{
-			bool result = IsValidEntry(ref Address);
-
-			if (!result) StatusCode = SiteStatusCode.Invalid;
-			try
+			return Task.Run(() =>
 			{
-				StatusCode = (SiteStatusCode)Convert.ToInt32(Ping());
-			}
-			catch (Exception)
-			{
-				StatusCode = SiteStatusCode.Invalid;
-			}
+				bool result = IsValidEntry(ref Address);
 
-			CachedResult = StatusCodes[StatusCode];
+				if (!result) StatusCode = SiteStatusCode.Invalid;
+				try
+				{
+					StatusCode = (SiteStatusCode)Convert.ToInt32(Ping());
+				}
+				catch (Exception)
+				{
+					StatusCode = SiteStatusCode.Invalid;
+				}
+
+				CachedResult = StatusCodes[StatusCode];
+			});
 		}
 
 		internal bool Ping()

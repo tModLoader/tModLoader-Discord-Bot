@@ -24,7 +24,7 @@ namespace tModloaderDiscordBot.Services
 			_services = services;
 		}
 
-		public void InitializeAsync()
+		public void Initialize()
 		{
 			_client.Log += Log;
 			_commandService.Log += Log;

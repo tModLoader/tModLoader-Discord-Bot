@@ -25,8 +25,11 @@ namespace tModloaderDiscordBot.Services
 		    return true;
 	    }
 
-	    public bool UserHasBotCooldown(ulong id) => _botCommandCooldowns.ContainsKey(id);
-	    public void AddBotCooldown(ulong id, DateTime time) => _botCommandCooldowns.Add(id, time);
+	    public bool UserHasBotCooldown(ulong id) 
+			=> _botCommandCooldowns.ContainsKey(id);
+
+	    public void AddBotCooldown(ulong id, DateTime time) 
+			=> _botCommandCooldowns.Add(id, time);
 
 	    public void UpdateBotCooldown(ulong id, DateTime time)
 	    {

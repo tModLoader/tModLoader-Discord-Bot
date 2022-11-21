@@ -4,12 +4,17 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace tModloaderDiscordBot.Services
 {
 	public class RecruitmentChannelService : BaseService
 	{
+#if TESTBOT
+		private const ulong recruitmentChannelId = 556634834093473793;
+#else
+		private const ulong recruitmentChannelId = 693622571018485830;
+#endif
+
 		internal class TrackedMessage
 		{
 			internal ulong originalAuthor;
@@ -22,24 +27,18 @@ namespace tModloaderDiscordBot.Services
 			}
 		}
 
-		private readonly DiscordSocketClient _client;
-
 		internal ITextChannel recruitmentChannel;
 		internal static readonly Dictionary<ulong, TrackedMessage> TrackedMessages = new Dictionary<ulong, TrackedMessage>();
 
 		public RecruitmentChannelService(IServiceProvider services) : base(services)
 		{
-			_client = services.GetRequiredService<DiscordSocketClient>();
 			_client.ReactionAdded += HandleReactionAdded;
 		}
 
 		internal async Task SetupAsync()
 		{
-#if TESTBOT
-			recruitmentChannel = (ITextChannel)_client.GetChannel(556634834093473793);
-#else
-			recruitmentChannel = (ITextChannel)_client.GetChannel(693622571018485830);
-#endif
+			recruitmentChannel = (ITextChannel)_client.GetChannel(recruitmentChannelId);
+
 			await _loggingService.Log(new LogMessage(LogSeverity.Info, "Recruitment", $"Looking for Recruitment channel"));
 			if (recruitmentChannel != null)
 			{
@@ -84,8 +83,8 @@ namespace tModloaderDiscordBot.Services
 				*/
 			}
 		}
-
-		private async Task HandleReactionAdded(Cacheable<IUserMessage, ulong> cacheableMessage, ISocketMessageChannel channel, SocketReaction reaction)
+		
+		private async Task HandleReactionAdded(Cacheable<IUserMessage, ulong> cacheableMessage, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
 		{
 			if (recruitmentChannel == null)
 				return;
@@ -100,8 +99,11 @@ namespace tModloaderDiscordBot.Services
 			if (!(reaction.User.Value is IGuildUser reactionAuthor))
 				return;
 
+			if (!channel.HasValue)
+				await channel.DownloadAsync();
+
 			// Users reacting to messages they own in recruitmentChannel can bump their message.
-			if (channel == recruitmentChannel)
+			if (channel.Id == recruitmentChannel.Id)
 			{
 				// Thought: We could just track original message, and update it from that, rather than delete. Allows original user to update.
 
@@ -139,10 +141,10 @@ namespace tModloaderDiscordBot.Services
 
 				TrackedMessages[botMessage.Id] = new TrackedMessage(trackedMessage.originalAuthor, botMessage.Timestamp);
 			}
-			else // Moderators reacting to messages in other channels can move message to Recruitment
+			else if(emoteName == "📡") // Moderators reacting to messages in other channels can move message to Recruitment
 			{
-				var authorPermissionsInRectuitmentChannel = reactionAuthor.GetPermissions((IGuildChannel)recruitmentChannel);
-				if (!authorPermissionsInRectuitmentChannel.SendMessages)
+				var authorPermissionsInRecruitmentChannel = reactionAuthor.GetPermissions(recruitmentChannel);
+				if (!authorPermissionsInRecruitmentChannel.SendMessages)
 					return; // Not authorized to post in recruitment channel.
 
 				var message = await cacheableMessage.GetOrDownloadAsync();

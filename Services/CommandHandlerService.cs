@@ -10,30 +10,21 @@ using tModloaderDiscordBot.Utils;
 
 namespace tModloaderDiscordBot.Services
 {
-	public class CommandHandlerService
+	public class CommandHandlerService : BaseService
 	{
 		private readonly UserHandlerService _userHandlerService;
 		private readonly CommandService _commandService;
 		private readonly GuildTagService _tagService;
-		private readonly LoggingService _loggingService;
-		private readonly DiscordSocketClient _client;
 		private readonly IServiceProvider _services;
 
-		public CommandHandlerService(IServiceProvider services)
+		public CommandHandlerService(IServiceProvider services) : base(services)
 		{
 			_userHandlerService = services.GetRequiredService<UserHandlerService>();
 			_commandService = services.GetRequiredService<CommandService>();
 			_tagService = services.GetRequiredService<GuildTagService>();
-			_loggingService = services.GetRequiredService<LoggingService>();
-			_client = services.GetRequiredService<DiscordSocketClient>();
 			_services = services;
 
 			_client.MessageReceived += HandleCommand;
-		}
-
-		~CommandHandlerService()
-		{
-			_client.MessageReceived -= HandleCommand;
 		}
 
 		public async Task InitializeAsync()

@@ -10,36 +10,44 @@ namespace tModloaderDiscordBot.Services
 {
 	class BanAppealChannelService : BaseService
 	{
-		private readonly DiscordSocketClient _client;
 		private string banAppealRoleName;
 		private SocketRole banAppealRole;
 		internal ITextChannel banAppealChannel;
+		private bool _isSetup = false;
+
+#if TESTBOT
+		private const ulong banAppealChannelId = 816493360722083851;
+#else
+		private const ulong banAppealChannelId = 331867286312845313;
+#endif
 
 		public BanAppealChannelService(IServiceProvider services) : base(services)
 		{
-			_client = services.GetRequiredService<DiscordSocketClient>();
 			_client.GuildMemberUpdated += HandleGuildMemberUpdated;
 		}
 
-		internal void Setup()
+		internal async Task<bool> Setup()
 		{
-#if TESTBOT
-			banAppealChannel = (ITextChannel)_client.GetChannel(816493360722083851);
-			banAppealRoleName = "banrole";
-#else
-			banAppealChannel = (ITextChannel)_client.GetChannel(331867286312845313);
-			banAppealRoleName = "BEGONE, EVIL!";
-#endif
-			banAppealRole = banAppealChannel.Guild.Roles.FirstOrDefault(x => x.Name == banAppealRoleName) as SocketRole;
+			if (!_isSetup)
+				_isSetup = await Task.Run(() =>
+				{
+					banAppealChannel = (ITextChannel)_client.GetChannel(banAppealChannelId);
+					// TODO Make this configurable
+					banAppealRoleName = "BEGONE, EVIL!";
+					banAppealRole = banAppealChannel.Guild.Roles.FirstOrDefault(x => x.Name == banAppealRoleName) as SocketRole;
+					return true;
+				});
+			return _isSetup;
 		}
 
-		private async Task HandleGuildMemberUpdated(SocketGuildUser before, SocketGuildUser after)
+		private async Task HandleGuildMemberUpdated(Cacheable<SocketGuildUser, ulong> before, SocketGuildUser after)
 		{
-			if (banAppealChannel == null)
+			if (!await Setup())
 				return;
 
-			if (after.Roles.Contains(banAppealRole))
-				if (!before.Roles.Contains(banAppealRole)){
+			await before.GetOrDownloadAsync().ContinueWith(async task =>
+			{
+				if (after.Roles.Contains(banAppealRole) && !task.Result.Roles.Contains(banAppealRole))
 				{
 					var embed = new EmbedBuilder()
 					.WithColor(Color.Blue)
@@ -47,7 +55,7 @@ namespace tModloaderDiscordBot.Services
 					.Build();
 					var botMessage = await banAppealChannel.SendMessageAsync("", embed: (Embed)embed);
 				}
-			}
+			});
 		}
 	}
 }

@@ -39,16 +39,16 @@ namespace tModloaderDiscordBot.Services
 
 		public GuildConfig GetConfig(ulong id)
 		{
-			if (_guildConfigs.ContainsKey(id)) return _guildConfigs[id];
+			if (_guildConfigs.ContainsKey(id))
+				return _guildConfigs[id];
+
 			return null;
 		}
 
 		public IEnumerable<GuildConfig> GetAllConfigs()
 		{
 			foreach (var kvp in _guildConfigs)
-			{
 				yield return kvp.Value;
-			}
 		}
 
 		public GuildConfigService(IServiceProvider services)
@@ -67,8 +67,7 @@ namespace tModloaderDiscordBot.Services
 			foreach (var guild in _client.Guilds.Where(x => !Settings.GuildConfigExists(x.Id)))
 			{
 				Directory.CreateDirectory(Settings.GuildPath(guild.Id));
-				GuildConfig gConfig = new GuildConfig(guild);
-				await WriteGuildConfig(gConfig);
+				await WriteGuildConfig(new GuildConfig(guild));
 			}
 
 			await UpdateCache();

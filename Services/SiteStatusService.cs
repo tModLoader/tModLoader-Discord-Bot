@@ -10,15 +10,15 @@ namespace tModloaderDiscordBot.Services
 {
 	public class SiteStatusService : BaseConfigService
 	{
-		public bool HasName(string name) => _guildConfig.SiteStatuses.Any(x => x.Name.EqualsIgnoreCase(name));
-		public bool HasAddress(string addr) => _guildConfig.SiteStatuses.Any(x => x.Address.EqualsIgnoreCase(addr));
+		public bool HasName(string name)
+			=> _guildConfig.SiteStatuses.Any(x => x.Name.EqualsIgnoreCase(name));
+		public bool HasAddress(string addr)
+			=> _guildConfig.SiteStatuses.Any(x => x.Address.EqualsIgnoreCase(addr));
 
 		public IEnumerable<SiteStatus> AllSiteStatuses()
 		{
 			for (int i = 0; i < _guildConfig.SiteStatuses.Count; i++)
-			{
 				yield return _guildConfig.SiteStatuses[i];
-			}
 		}
 
 		public (string cachedResult, string url) GetCachedResult(string key)
@@ -33,38 +33,28 @@ namespace tModloaderDiscordBot.Services
 		{
 			_updateCacheTimer = new Timer((e) =>
 			{
-				foreach (var config in _guildConfigService.GetAllConfigs().ToList())
+				Task.Run(async () =>
 				{
-					foreach (var status in config.SiteStatuses)
-					{
-						status.Revalidate();
-					}
-				}
+					foreach (var config in _guildConfigService.GetAllConfigs().ToList())
+						foreach (var status in config.SiteStatuses)
+							await status.Revalidate();
+				});	
 			}, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
-		}
-
-		~SiteStatusService()
-		{
-			_updateCacheTimer.Dispose();
-			_updateCacheTimer = null;
 		}
 
 		public async Task UpdateAsync()
 		{
 			foreach (var config in _guildConfigService.GetAllConfigs())
-			{
 				await UpdateForConfig(config);
-			}
 		}
 
-		public Task UpdateForConfig(GuildConfig config)
+		public async Task UpdateForConfig(GuildConfig config)
 		{
-			var needsValidation = config.SiteStatuses.Where(x => x.StatusCode == SiteStatusCode.Unknown);
-			foreach (var siteStatus in needsValidation)
-			{
-				siteStatus.Revalidate();
-			}
-			return Task.CompletedTask;
+			await Task.WhenAll(
+				config.SiteStatuses.Where(x => x.StatusCode == SiteStatusCode.Unknown)
+				.ToAsyncEnumerable()
+				.ForEachAwaitAsync(async x => await x.Revalidate())
+			);
 		}
 	}
 }
