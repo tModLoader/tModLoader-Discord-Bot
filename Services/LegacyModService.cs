@@ -184,7 +184,7 @@ namespace tModloaderDiscordBot.Services
 
 		private async Task Log(string msg)
 		{
-			await _loggingService.Log(new LogMessage(LogSeverity.Info, "ModService", msg));
+			await _loggingService.Log(new LogMessage(LogSeverity.Info, "ModServ13", msg));
 		}
 	}
 }

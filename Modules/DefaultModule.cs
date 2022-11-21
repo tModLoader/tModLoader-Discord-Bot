@@ -425,6 +425,7 @@ namespace tModloaderDiscordBot.Modules
 			try
 			{
 				modName = modName.RemoveWhitespace();
+				// TODO: Actually check cache before downloading a new cache.
 				bool modFound = await ModService.TryCacheMod(modName);
 
 				if (!modFound)
