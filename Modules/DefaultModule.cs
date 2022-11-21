@@ -10,6 +10,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using tModloaderDiscordBot.Services;
@@ -20,8 +21,10 @@ namespace tModloaderDiscordBot.Modules
 	[Name("default")]
 	public class DefaultModule : BotModuleBase
 	{
+		public LegacyModService LegacyModService { get; set; }
 		public ModService ModService { get; set; }
-
+		public AuthorService AuthorService { get; set; }
+		
 		//public BaseModule(CommandService commandService, GuildConfigService guildConfigService) : base(commandService, guildConfigService)
 		//{
 		//}
@@ -53,6 +56,38 @@ namespace tModloaderDiscordBot.Modules
 				GetDeltaString(elapsed, clientLatency));
 		}
 
+		[Command("widget-legacy")]
+		[Alias("widgetimg-legacy", "widgetimage-legacy", "widget13")]
+		[Summary("Generates a widget image of specified mod")]
+		[Remarks("widget13 <mod>\nwidget13 examplemod")]
+		public async Task LegacyWidget([Remainder]string mod)
+		{
+			mod = mod.RemoveWhitespace();
+			(bool result, string str) = await ShowSimilarMods(mod);
+			
+			string modFound = LegacyModService.Mods.FirstOrDefault(x => x.EqualsIgnoreCase(mod));
+			if (modFound == null)
+			{
+				return;
+			}
+
+			var msg = await ReplyAsync($"Generating widget for {modFound}...");
+			
+			using var client = new System.Net.Http.HttpClient();
+			byte[] response = await client.GetByteArrayAsync($"{LegacyModService.WidgetUrl}{modFound}");
+			if (response == null)
+			{
+				await ReplyAsync($"Unable to create the widget");
+				await msg.DeleteAsync();
+				return;
+			}
+
+			using var stream = new MemoryStream(response);
+			await Context.Channel.SendFileAsync(stream, $"widget-{modFound}.png");
+
+			await msg.DeleteAsync();
+		}
+		
 		[Command("widget")]
 		[Alias("widgetimg", "widgetimage")]
 		[Summary("Generates a widget image of specified mod")]
@@ -60,30 +95,104 @@ namespace tModloaderDiscordBot.Modules
 		public async Task Widget([Remainder]string mod)
 		{
 			mod = mod.RemoveWhitespace();
-			var (result, str) = await ShowSimilarMods(mod);
 
-			if (result)
+			using var client = new System.Net.Http.HttpClient();
+			byte[] response;
+			
+			var msg = await ReplyAsync($"Generating widget for {mod}...");
+			try
 			{
-				var modFound = ModService.Mods.FirstOrDefault(x => x.EqualsIgnoreCase(mod));
-
-				if (modFound != null)
+				response = await client.GetByteArrayAsync($"{ModService.WidgetUrl}{mod}");
+				if (response == null)
 				{
-					var msg = await ReplyAsync($"Generating widget for {modFound}...");
-
-					// need perfect string.
-
-					using (var client = new System.Net.Http.HttpClient())
-					{
-						var response = await client.GetByteArrayAsync($"{ModService.WidgetUrl}{modFound}");
-						using (var stream = new MemoryStream(response))
-						{
-							await Context.Channel.SendFileAsync(stream, $"widget-{modFound}.png");
-						}
-					}
-					await msg.DeleteAsync();
+					await ReplyAsync($"Unable to create the widget");
+					return;
 				}
 			}
+			catch
+			{
+				await ReplyAsync($"No mod with the name '{mod}' found!");
+				await msg.DeleteAsync();
+				return;
+			}
+			
+			using var stream = new MemoryStream(response);
+			await Context.Channel.SendFileAsync(stream, $"widget-{mod}.png");
 
+			await msg.DeleteAsync();
+		}
+
+		[Command("author-widget")]
+		[Alias("author-widgetimg", "author-widgetimage")]
+		[Summary("Generates a widget image of the specified author")]
+		[Remarks("author-widget <steamid64>\nauthor-widget 76561198278789341")]
+		public async Task AuthorWidget([Remainder]string steamid)
+		{
+			steamid = steamid.RemoveWhitespace();
+			
+			using var client = new System.Net.Http.HttpClient();
+			byte[] response;
+			
+			var msg = await ReplyAsync($"Generating widget for {steamid}...");
+			try
+			{
+				response = await client.GetByteArrayAsync($"{AuthorService.WidgetUrl}{steamid}");
+				if (response == null)
+				{
+					await ReplyAsync($"Unable to create the widget");
+					await msg.DeleteAsync();
+
+					return;
+				}
+			}
+			catch
+			{
+				await ReplyAsync($"No author with the name or ID '{steamid}' found!");
+				await msg.DeleteAsync();
+
+				return;
+			}
+
+			using var stream = new MemoryStream(response);
+			await Context.Channel.SendFileAsync(stream, $"widget-{steamid}.png");
+
+			await msg.DeleteAsync();
+		}
+		
+		[Command("author-widget-legacy")]
+		[Alias("author-widgetimg-legacy", "author-widgetimage-legacy", "author-widget13")]
+		[Summary("Generates a widget image of the specified author")]
+		[Remarks("author-widget13 <steamid64>\nauthor-widget13 76561198278789341")]
+		public async Task LegacyAuthorWidget([Remainder]string steamid)
+		{
+			steamid = steamid.RemoveWhitespace();
+			var msg = await ReplyAsync($"Generating widget for {steamid}...");
+			
+			using var client = new System.Net.Http.HttpClient();
+			byte[] response;
+			try
+			{
+				response = await client.GetByteArrayAsync($"{AuthorService.LegacyWidgetUrl}{steamid}");
+				if (response == null)
+				{
+					await ReplyAsync($"Unable to create the widget");
+					await msg.DeleteAsync();
+
+					return;
+				}
+			}
+			catch
+			{
+				await ReplyAsync($"No author with the name or ID '{steamid}' found!");
+				await msg.DeleteAsync();
+
+				return;
+			}
+
+			using var stream = new MemoryStream(response);
+			await Context.Channel.SendFileAsync(stream, $"widget-{steamid}.png");
+
+			await msg.DeleteAsync();
 		}
 
 		[Command("wikis")]
@@ -117,24 +226,6 @@ namespace tModloaderDiscordBot.Modules
 			searchTerm = searchTerm.Trim();
 			var encoded = WebUtility.UrlEncode(searchTerm);
 			await ReplyAsync($"Microsoft docs for {searchTerm}: <https://docs.microsoft.com/en-us/search/?scope=.NET&terms={encoded}>");
-		}
-
-		[Command("ranksbysteamid")]
-		[Alias("ranksbyauthor", "listmods")]
-		[Summary("Generates a link for the ranksbysteamid of the steamid64 provided.")]
-		[Remarks("ranksbysteamid <steam64id>\ranksbysteamid 76561198422040054")]
-		public async Task RanksBySteamID([Remainder]string steamid64)
-		{
-			steamid64 = steamid64.Trim();
-			if (steamid64.Length == 17 && steamid64.All(c => c >= '0' && c <= '9'))
-			{
-				string encoded = WebUtility.UrlEncode(steamid64);
-				await ReplyAsync($"tModLoader ranks by steamid results for {steamid64}: <http://javid.ddns.net/tModLoader/tools/ranksbysteamid.php?steamid64={encoded}>");
-			}
-			else
-				await ReplyAsync($"\"{steamid64}\" is not a valid steamid64");
-
-			// Todo: allow users to register their username under a steamid64 and allow username to be used here.
 		}
 
 		// Current classes documented on the Wiki
@@ -238,18 +329,18 @@ namespace tModloaderDiscordBot.Modules
 			}
 		}
 
-		[Command("mod")]
-		[Alias("modinfo")]
+		[Command("mod-legacy")]
+		[Alias("modinfo-legacy", "mod13")]
 		[Summary("Shows info about a mod")]
-		[Remarks("mod <internal modname> --OR-- mod <part of name>\nmod examplemod")]
+		[Remarks("mod13 <internal modname> --OR-- mod13 <part of name>\nmod13 examplemod")]
 		[Priority(-99)]
-		public async Task Mod([Remainder] string mod)
+		public async Task LegacyMod([Remainder] string mod)
 		{
 			mod = mod.RemoveWhitespace();
 
 			if (mod.EqualsIgnoreCase(">count"))
 			{
-				await ReplyAsync($"Found `{ModService.Mods.Count()}` cached mods");
+				await ReplyAsync($"Found `{LegacyModService.Mods.Count()}` cached mods");
 				return;
 			}
 
@@ -260,14 +351,14 @@ namespace tModloaderDiscordBot.Modules
 				if (string.IsNullOrEmpty(str))
 				{
 					// Fixes not finding files
-					mod = ModService.Mods.FirstOrDefault(m => string.Equals(m, mod, StringComparison.CurrentCultureIgnoreCase));
+					mod = LegacyModService.Mods.FirstOrDefault(m => string.Equals(m, mod, StringComparison.CurrentCultureIgnoreCase));
 					if (mod == null)
 						return;
 				}
 				else mod = str;
 
 				// Some mod is found continue.
-				var modjson = JObject.Parse(await FileUtils.FileReadToEndAsync(new SemaphoreSlim(1, 1), ModService.ModPath(mod)));
+				var modjson = JObject.Parse(await FileUtils.FileReadToEndAsync(new SemaphoreSlim(1, 1), LegacyModService.ModPath(mod)));
 				var eb = new EmbedBuilder()
 					.WithTitle("Mod: ")
 					.WithCurrentTimestamp()
@@ -308,10 +399,10 @@ namespace tModloaderDiscordBot.Modules
 					}
 				}
 
-				eb.AddField("Widget", $"<{ModService.WidgetUrl}{mod}>", true);
+				eb.AddField("Widget", $"<{LegacyModService.WidgetUrl}{mod}>", true);
 				using (var client = new System.Net.Http.HttpClient())
 				{
-					var response = await client.GetAsync(ModService.QueryHomepageUrl + mod);
+					var response = await client.GetAsync(LegacyModService.QueryHomepageUrl + mod);
 					var postResponse = await response.Content.ReadAsStringAsync();
 					if (!string.IsNullOrEmpty(postResponse) && !postResponse.StartsWith("Failed:"))
 					{
@@ -324,13 +415,284 @@ namespace tModloaderDiscordBot.Modules
 			}
 		}
 
+		[Command("mod")]
+		[Alias("modinfo")]
+		[Summary("Shows info about a mod")]
+		[Remarks("mod <internal modname or mod id> \n`mod 2831018225` --OR-- `mod examplemod`")]
+		[Priority(-99)]
+		public async Task Mod([Remainder] string modName)
+		{
+			try
+			{
+				modName = modName.RemoveWhitespace();
+				// TODO: Actually check cache before downloading a new cache.
+				bool modFound = await ModService.TryCacheMod(modName);
+
+				if (!modFound)
+				{
+					await ReplyAsync($"A mod with the name \"{modName}\" was not found.");
+					return;
+				}
+				
+				var modJData = JObject.Parse(await FileUtils.FileReadToEndAsync(new SemaphoreSlim(1, 1), ModService.ModPath(modName)));
+
+				// parse json into object
+				var modData = new
+				{
+					displayName = modJData["display_name"]?.Value<string>(),
+					internalName = modJData["internal_name"]?.Value<string>(),
+					modID = modJData["mod_id"]?.Value<string>(),
+					version = modJData["version"]?.Value<string>(),
+					workshopIconURL = modJData["workshop_icon_url"]?.Value<string>(),
+					author = modJData["author"]?.Value<string>(),
+					authorID = modJData["author_id"]?.Value<string>(),
+					downloads = modJData["downloads_total"]?.Value<int>(),
+					views = modJData["views"]?.Value<int>(),
+					favorited = modJData["favorited"]?.Value<int>(),
+					voteData = modJData["vote_data"]?.Value<JToken>(),
+					modside = modJData["modside"]?.Value<string>(),
+					tmodloaderVersion = modJData["tmodloader_version"]?.Value<string>(),
+					timeCreated = modJData["time_created"]?.Value<int>(),
+					timeUpdated = modJData["time_updated"]?.Value<int>(),
+					homepage = modJData["homepage"]?.Value<string>()
+				};
+
+				// create embed
+				var eb = new EmbedBuilder()
+					.WithTitle($"Mod: {modData.displayName} ({modData.internalName}) {modData.version}")
+					.WithCurrentTimestamp()
+					.WithAuthor(new EmbedAuthorBuilder
+					{
+						IconUrl = Context.Message.Author.GetAvatarUrl(),
+						Name = $"Requested by {Context.Message.Author.FullName()}"
+					})
+					.WithUrl($"https://steamcommunity.com/sharedfiles/filedetails/?id={modData.modID}")
+					.WithThumbnailUrl(modData.workshopIconURL);
+
+				// add fields
+				eb.AddField("Author",
+					$"[{modData.author} ({modData.authorID})]" +
+					$"(https://steamcommunity.com/profiles/{modData.authorID}/)");
+
+				eb.AddField("Downloads", $"{modData.downloads:n0}", true);
+				eb.AddField("Views", $"{modData.views:n0}", true);
+				eb.AddField("Favorites", $"{modData.favorited:n0}", true);
+
+				// if vote data exists
+				if (modData.voteData.HasValues)
+				{
+					// calculate star amount
+					double fullStarCount = 5 * modData.voteData["score"]?.Value<double>() ?? 0;
+					double emptyStarCount = 5 - fullStarCount;
+
+					// concatinate star characters to string
+					string s = string.Concat(
+						new string(Enumerable.Repeat('\u2605', (int)Math.Round(fullStarCount)).ToArray()),
+						new string(Enumerable.Repeat('\u2606', (int)Math.Round(emptyStarCount)).ToArray()));
+
+					eb.AddField("Votes", s, true);
+					eb.AddField("Upvotes", modData.voteData["votes_up"]?.Value<int>(), true);
+					eb.AddField("Downvotes", modData.voteData["votes_down"]?.Value<int>(), true);
+				}
+
+				eb.AddField("Mod Side", modData.modside);
+				eb.AddField("tModLoader Version", modData.tmodloaderVersion);
+
+				eb.AddField("Last updated", $"<t:{modData.timeUpdated}:d>", true);
+				eb.AddField("Time created", $"<t:{modData.timeCreated}:d>", true);
+
+				// if tags are present
+				if (modJData["tags"].HasValues)
+				{
+					var tags = modJData["tags"];
+					var tagNames = tags?.Select(x => x["display_name"].Value<string>());
+					eb.AddField("Tags", string.Join(", ", tagNames));
+				}
+
+				if (!string.IsNullOrEmpty(modData.homepage))
+				{
+					eb.AddField("Homepage", modData.homepage);
+				}
+
+				var embed = eb.Build();
+				await ReplyAsync("", embed: embed);
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine($"{nameof(DefaultModule)}.{nameof(Mod)}: An error occured generating the embed: {e.Message}\n{e.StackTrace}");
+				await ReplyAsync("an error occured generating the embed");
+			}
+		}
+
+		[Command("author-legacy")]
+		[Alias("authorinfo-legacy", "author13")]
+		[Summary("Shows info about an author")]
+		[Remarks("author13 <steamid64 or steam name (not reliable)>\n`author13 76561198278789341` --OR-- `author13 NotLe0n`")]
+		[Priority(-99)]
+		public async Task LegacyAuthor([Remainder] string steamID)
+		{
+			try
+			{
+				string authorJson = await AuthorService.DownloadSingleLegacyData(steamID);
+				JObject authorJData;
+				try
+				{
+					authorJData = JObject.Parse(authorJson);
+				}
+				catch
+				{
+					await ReplyAsync($"An author with the ID \"{steamID}\" was not found.");
+					Console.WriteLine($"{nameof(DefaultModule)}.{nameof(LegacyAuthor)}: Error when parsing json. Server response was:\n{authorJson}");
+					return;
+				}
+
+				var authorData = new
+				{
+					steamID = authorJData["steam_id"]?.Value<string>(),
+					steamName = authorJData["steam_name"]?.Value<string>(),
+					total = authorJData["total"]?.Value<int>(),
+					downloadsTotal = authorJData["downloads_total"]?.Value<int>(),
+					downloadsYesterday = authorJData["downloads_yesterday"]?.Value<int>(),
+					mods = authorJData["mods"]?.Values<JObject>(),
+					maintainedMods = authorJData["maintained_mods"]?.Values<JObject>()
+				};
+
+				// create embed
+				var eb = new EmbedBuilder()
+					.WithTitle($"Author: {authorData.steamName}")
+					.WithCurrentTimestamp()
+					.WithAuthor(new EmbedAuthorBuilder
+					{
+						IconUrl = Context.Message.Author.GetAvatarUrl(),
+						Name = $"Requested by {Context.Message.Author.FullName()}"
+					})
+					.WithUrl($"https://steamcommunity.com/profiles/{authorData.steamID}/");
+
+				eb.AddField("Total mod count", authorData.total ?? 0, true);
+				eb.AddField("Total downloads count", authorData.downloadsTotal ?? 0, true);
+				eb.AddField("Daily download count", authorData.downloadsYesterday ?? 0, true);
+
+				string mods = string.Join(", ", authorData.mods
+					.Select(mod => mod?["display_name"]?.Value<string>()));
+				
+				eb.AddField("Mods", authorData.mods.Any() ? mods : "No mods");
+
+
+				if (authorData.maintainedMods.Any()) {
+					string maintainedMods = string.Join(", ", authorData.maintainedMods
+						.Select(mod => mod?["internal_name"]?.Value<string>()));
+
+					eb.AddField("Maintained Mods", maintainedMods);
+				}
+
+				var embed = eb.Build();
+				await ReplyAsync("", embed: embed);
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine($"{nameof(DefaultModule)}.{nameof(LegacyAuthor)}: An error occured generating the embed: {e.Message}\n{e.StackTrace}");
+				await ReplyAsync("an error occured generating the embed");
+			}
+		}
+		
+		[Command("author")]
+		[Alias("authorinfo")]
+		[Summary("Shows info about an author")]
+		[Remarks("author <steamid64 or steam name (not reliable)> \n`author 76561198278789341` --OR-- `author NotLe0n`")]
+		[Priority(-99)]
+		public async Task Author([Remainder] string steamID)
+		{
+			try
+			{
+				string authorJson = await AuthorService.DownloadSingleData(steamID);
+				if(authorJson.StartsWith("No steamid found"))
+				{
+					await ReplyAsync(authorJson);
+					return;
+				}
+				JObject authorJData;
+				try
+				{
+					authorJData = JObject.Parse(authorJson);
+				}
+				catch
+				{
+					await ReplyAsync($"An author with the ID \"{steamID}\" was not found.");
+					Console.WriteLine($"{nameof(DefaultModule)}.{nameof(Author)}: Error when parsing json. Server response was:\n{authorJson}");
+					return;
+				}
+
+				var authorData = new
+				{
+					steamID = authorJData["steam_id"]?.Value<string>(),
+					steamName = authorJData["steam_name"]?.Value<string>(),
+					total = authorJData["total"]?.Value<int>(),
+					totalDownloads = authorJData["total_downloads"]?.Value<int>(),
+					totalFavorites = authorJData["total_favorites"]?.Value<int>(),
+					totalViews = authorJData["total_views"]?.Value<int>(),
+					mods = authorJData["mods"]?.Values<JObject>()
+				};
+
+				// create embed
+				var eb = new EmbedBuilder()
+					.WithTitle($"Author: {authorData.steamName}")
+					.WithCurrentTimestamp()
+					.WithAuthor(new EmbedAuthorBuilder
+					{
+						IconUrl = Context.Message.Author.GetAvatarUrl(),
+						Name = $"Requested by {Context.Message.Author.FullName()}"
+					})
+					.WithUrl($"https://steamcommunity.com/profiles/{authorData.steamID}/");
+
+				eb.AddField("Total mod Count", authorData.total ?? 0);
+				eb.AddField("Total downloads Count", authorData.totalDownloads ?? 0, true);
+				eb.AddField("Total view Count", authorData.totalViews ?? 0, true);
+				eb.AddField("Total favorites Count", authorData.totalFavorites, true);
+
+				/* Field max is 1024
+				string mods = string.Join(", ", authorData.mods
+					.Select(mod =>
+						$"[{mod?["display_name"]?.Value<string>()}]" +
+						$"(https://steamcommunity.com/sharedfiles/filedetails/?id={mod?["mod_id"]?.Value<string>()})"));
+				*/
+
+				var modsSB = new StringBuilder();
+				bool first = true;
+				foreach (var mod in authorData.mods)
+				{
+					string modLink = $"[{mod?["display_name"]?.Value<string>()}]" + $"(https://steamcommunity.com/sharedfiles/filedetails/?id={mod?["mod_id"]?.Value<string>()})";
+					if (modsSB.Length + modLink.Length > 1000)
+					{
+						modsSB.Append(" ...And more");
+						break;
+					}
+					if (!first)
+					{
+						modsSB.Append(", ");
+					}
+					first = false;
+					modsSB.Append(modLink);
+				}
+
+				eb.AddField("Mods", modsSB.ToString());
+
+				var embed = eb.Build();
+				await ReplyAsync("", embed: embed);
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine($"{nameof(DefaultModule)}.{nameof(Author)}: An error occured generating the embed: {e.Message}\n{e.StackTrace}");
+				await ReplyAsync("an error occured generating the embed");
+			}
+		}
+		
 		// Helper method
 		private async Task<(bool, string)> ShowSimilarMods(string mod)
 		{
-			var mods = ModService.Mods.Where(m => string.Equals(m, mod, StringComparison.CurrentCultureIgnoreCase));
+			var mods = LegacyModService.Mods.Where(m => string.Equals(m, mod, StringComparison.CurrentCultureIgnoreCase));
 
 			if (mods.Any()) return (true, string.Empty);
-			var cached = await ModService.TryCacheMod(mod);
+			var cached = await LegacyModService.TryCacheMod(mod);
 			if (cached) return (true, string.Empty);
 
 			const string msg = "Mod with that name doesn\'t exist";
@@ -339,7 +701,7 @@ namespace tModloaderDiscordBot.Modules
 			// Find similar mods
 
 			var similarMods =
-				ModService.Mods
+				LegacyModService.Mods
 					.Where(m => m.Contains(mod, StringComparison.CurrentCultureIgnoreCase)
 								&& m.LevenshteinDistance(mod) <= m.Length - 2) // prevents insane amount of mods found
 					.ToArray();
@@ -356,7 +718,7 @@ namespace tModloaderDiscordBot.Modules
 					// Make sure message doesn't end with a half cut modname
 					var index = modMsg.LastIndexOf(',');
 					var lastModClean = modMsg.Substring(index + 1).Replace("`", "").Trim();
-					if (ModService.Mods.All(m => m != lastModClean))
+					if (LegacyModService.Mods.All(m => m != lastModClean))
 						modMsg = modMsg.Substring(0, index);
 				}
 			}
