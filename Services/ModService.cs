@@ -49,40 +49,47 @@ namespace tModloaderDiscordBot.Services
 		
 		public async Task Maintain()
 		{
-			await Log("Starting 1.4 maintenance");
-			// Create dirs
-			Directory.CreateDirectory(ModDir);
-
-			string path = Path.Combine(ModDir, "date.txt");
-			var dateDiff = TimeSpan.MinValue;
-
-			// Data.txt present, read
-			if (File.Exists(path))
+			try
 			{
-				string savedBinary = await FileUtils.FileReadToEndAsync(_semaphore, path);
-				long parsedBinary = long.Parse(savedBinary);
-				var savedBinaryDate = BotUtils.DateTimeFromUnixTimestampSeconds(parsedBinary);
-				dateDiff = BotUtils.DateTimeFromUnixTimestampSeconds(BotUtils.GetCurrentUnixTimestampSeconds()) - savedBinaryDate;
-				await Log($"Read date difference for 1.4 mod cache update: {dateDiff}");
-			}
+				await Log("Starting 1.4 maintenance");
+				// Create dirs
+				Directory.CreateDirectory(ModDir);
 
-			// Needs to maintain data
-			if (dateDiff == TimeSpan.MinValue || dateDiff.TotalHours > 5.99d)
-			{
-				await Log($"Maintenance determined: over 6 hours. Updating...");
-				
-				string data = await DownloadModListData();
-				var modList = JArray.Parse(data);
-				
-				foreach (var jToken in modList)
+				string path = Path.Combine(ModDir, "date.txt");
+				var dateDiff = TimeSpan.MinValue;
+
+				// Data.txt present, read
+				if (File.Exists(path))
 				{
-					string name = jToken["internal_name"]?.ToObject<string>().RemoveWhitespace();
-					string jsonPath = Path.Combine(ModDir, $"{name}.json");
-					await FileUtils.FileWriteAsync(_semaphore, jsonPath, jToken.ToString(Formatting.Indented));
+					string savedBinary = await FileUtils.FileReadToEndAsync(_semaphore, path);
+					long parsedBinary = long.Parse(savedBinary);
+					var savedBinaryDate = BotUtils.DateTimeFromUnixTimestampSeconds(parsedBinary);
+					dateDiff = BotUtils.DateTimeFromUnixTimestampSeconds(BotUtils.GetCurrentUnixTimestampSeconds()) - savedBinaryDate;
+					await Log($"Read date difference for 1.4 mod cache update: {dateDiff}");
 				}
 
-				await FileUtils.FileWriteAsync(_semaphore, path, BotUtils.GetCurrentUnixTimestampSeconds().ToString());
-				await Log($"File write successful");
+				// Needs to maintain data
+				if (dateDiff == TimeSpan.MinValue || dateDiff.TotalHours > 5.99d)
+				{
+					await Log($"Maintenance determined: over 6 hours. Updating...");
+
+					string data = await DownloadModListData();
+					var modList = JArray.Parse(data);
+
+					foreach (var jToken in modList)
+					{
+						string name = jToken["internal_name"]?.ToObject<string>().RemoveWhitespace();
+						string jsonPath = Path.Combine(ModDir, $"{name}.json");
+						await FileUtils.FileWriteAsync(_semaphore, jsonPath, jToken.ToString(Formatting.Indented));
+					}
+
+					await FileUtils.FileWriteAsync(_semaphore, path, BotUtils.GetCurrentUnixTimestampSeconds().ToString());
+					await Log($"File write successful");
+				}
+			}
+			catch (Exception)
+			{
+				await Log($"ModService Maintenance failed");
 			}
 		}
 
