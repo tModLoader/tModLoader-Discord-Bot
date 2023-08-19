@@ -131,7 +131,8 @@ namespace tModloaderDiscordBot.Services
 		private async Task<string> DownloadModListData()
 		{
 			string inputJson;
-			Console.WriteLine($"Downloading json from Steam...");
+			await _loggingService.Log(new LogMessage(LogSeverity.Info, nameof(ModService),
+					$"Downloading json from Steam..."));
 
 			List<JObject> list = new List<JObject>();
 
@@ -152,7 +153,8 @@ namespace tModloaderDiscordBot.Services
 				var publishedfiledetails = responseObject["publishedfiledetails"];
 				if (publishedfiledetails == null || publishedfiledetails.Count() == 0)
 				{
-					Console.WriteLine($"No more.");
+					await _loggingService.Log(new LogMessage(LogSeverity.Info, nameof(ModService),
+					$"No more."));
 					break;
 				}
 				cursor = (string)responseObject["next_cursor"];
@@ -160,9 +162,11 @@ namespace tModloaderDiscordBot.Services
 
 				var modObjects = publishedfiledetails.Children().Cast<JObject>().ToArray();
 				list.AddRange(modObjects);
-				Console.WriteLine($"Downloaded {list.Count} of {total}");
+				await _loggingService.Log(new LogMessage(LogSeverity.Info, nameof(ModService),
+					$"Downloaded {list.Count} of {total}"));
 			}
-			Console.WriteLine("Done");
+			await _loggingService.Log(new LogMessage(LogSeverity.Info, nameof(ModService),
+					$"Done"));
 			inputJson = JsonConvert.SerializeObject(list);
 			return inputJson;
 
