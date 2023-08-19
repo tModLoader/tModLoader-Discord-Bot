@@ -245,7 +245,7 @@ namespace tModloaderDiscordBot.Modules
 			string methodName = parts.Length >= 2 ? parts[1].Trim().ToLowerInvariant() : "";
 			string methodNameLower = methodName.ToLowerInvariant();
 
-			if (vanillaClasses.Contains(classNameLower))
+			if (false && vanillaClasses.Contains(classNameLower))
 			{
 				if (methodName == "")
 					await ReplyAsync($"Documentation for `{className}`: <https://github.com/tModLoader/tModLoader/wiki/{className}-Class-Documentation>");
@@ -278,14 +278,15 @@ namespace tModloaderDiscordBot.Modules
 			else
 			{
 				// might be a modded class:
-				//http://tmodloader.github.io/tModLoader/docs/1.4-stable/namespace_terraria_1_1_mod_loader.js
+				//https://docs.tmodloader.net/docs/stable/annotated_dup.js
 
 				using (var client = new WebClient())
 				{
-					string response = await client.DownloadStringTaskAsync("http://tmodloader.github.io/tModLoader/docs/1.4-stable/namespace_terraria_1_1_mod_loader.js");
+					string response = await client.DownloadStringTaskAsync("https://docs.tmodloader.net/docs/stable/annotated_dup.js");
 					response = string.Join("\n", response.Split("\n").Skip(1)).TrimEnd(';');
 					var resultObject = JsonConvert.DeserializeObject<List<List<object>>>(response);
-					var stringResultsOnly = resultObject.Where(x => x.All(y => y is string));
+					//var stringResultsOnly = resultObject.Where(x => x.All(y => y is string));
+					var stringResultsOnly = resultObject.Where(x => x.Count == 3 && x[0] is string && x[1] is string);
 					List<List<string>> result = new List<List<string>>();
 					foreach (var item in stringResultsOnly)
 					{
@@ -297,20 +298,24 @@ namespace tModloaderDiscordBot.Modules
 						className = r[0];
 						if (methodName == "")
 						{
-							await ReplyAsync($"Documentation for `{className}`: http://tmodloader.github.io/tModLoader/docs/1.4-stable/{r[1]}");
+							await ReplyAsync($"Documentation for `{className}`: https://docs.tmodloader.net/docs/stable/{r[1]}");
+						}
+						else if (r[2] == null) // null means the class has no documentation, but class exists.
+						{
+							await ReplyAsync($"Documentation for `{className}.{methodName}` not found");
 						}
 						else
 						{
-							Console.WriteLine("http://tmodloader.github.io/tModLoader/docs/1.4-stable/{r[2]}.js");
+							Console.WriteLine("https://docs.tmodloader.net/docs/stable/{r[2]}.js");
 							// now to find method name
-							response = await client.DownloadStringTaskAsync($"http://tmodloader.github.io/tModLoader/docs/1.4-stable/{r[2]}.js");
+							response = await client.DownloadStringTaskAsync($"https://docs.tmodloader.net/docs/stable/{r[2]}.js");
 							response = string.Join("\n", response.Split("\n").Skip(1)).TrimEnd(';');
 							result = JsonConvert.DeserializeObject<List<List<string>>>(response);
 							r = result.Find(x => x[0].EqualsIgnoreCase(methodNameLower));
 							if (r != null)
 							{
 								methodName = r[0];
-								await ReplyAsync($"Documentation for `{className}.{methodName}`: http://tmodloader.github.io/tModLoader/docs/1.4-stable/{r[1]}");
+								await ReplyAsync($"Documentation for `{className}.{methodName}`: https://docs.tmodloader.net/docs/stable/{r[1]}");
 							}
 							else
 							{
