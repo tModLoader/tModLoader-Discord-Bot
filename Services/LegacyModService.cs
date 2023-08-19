@@ -52,7 +52,7 @@ namespace tModloaderDiscordBot.Services
 			/* This not working anymore with 1.4 alphas making releases.
 			tMLVersion = $"tModLoader {JObject.Parse(client.DownloadString(NewestReleaseUrl)).GetValue("tag_name")}";
 			*/
-			tMLVersion = $"tModLoader v0.11.8.8";
+			tMLVersion = $"tModLoader v0.11.8.9";
 			_semaphore = new SemaphoreSlim(1, 1);
 
 			_updateTimer ??= new Timer(UpdateMods, null, TimeSpan.FromHours(6), TimeSpan.FromHours(6));

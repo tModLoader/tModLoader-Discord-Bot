@@ -13,6 +13,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using tModloaderDiscordBot.Components;
 using tModloaderDiscordBot.Services;
 using tModloaderDiscordBot.Utils;
 
@@ -451,6 +452,10 @@ namespace tModloaderDiscordBot.Modules
 					else modName = str;
 
 					// Some mod is found continue.
+					string modFileData = await FileUtils.FileReadToEndAsync(new SemaphoreSlim(1, 1), ModService.ModPath(modName));
+					var modData = new ModInfo(JObject.Parse(modFileData), true);
+
+					/*
 					var modJData = JObject.Parse(await FileUtils.FileReadToEndAsync(new SemaphoreSlim(1, 1), ModService.ModPath(modName)));
 
 					// parse json into object
@@ -473,33 +478,34 @@ namespace tModloaderDiscordBot.Modules
 						timeUpdated = modJData["time_updated"]?.Value<int>(),
 						homepage = modJData["homepage"]?.Value<string>()
 					};
+					*/
 
 					// create embed
 					var eb = new EmbedBuilder()
-						.WithTitle($"Mod: {modData.displayName} ({modData.internalName}) {modData.version}")
+						.WithTitle($"Mod: {modData.DisplayName} ({modData.InternalName}) {modData.NewestVersion}")
 						.WithCurrentTimestamp()
 						.WithAuthor(new EmbedAuthorBuilder
 						{
 							IconUrl = Context.Message.Author.GetAvatarUrl(),
 							Name = $"Requested by {Context.Message.Author.FullName()}"
 						})
-						.WithUrl($"https://steamcommunity.com/sharedfiles/filedetails/?id={modData.modID}")
-						.WithThumbnailUrl(modData.workshopIconURL);
+						.WithUrl($"https://steamcommunity.com/sharedfiles/filedetails/?id={modData.WorkshopId}")
+						.WithThumbnailUrl(modData.WorkshopIconURL);
 
 					// add fields
 					eb.AddField("Author",
-						$"[{modData.author} ({modData.authorID})]" +
-						$"(https://steamcommunity.com/profiles/{modData.authorID}/)");
+						$"[{modData.AuthorName} ({modData.CreatorId})]" +
+						$"(https://steamcommunity.com/profiles/{modData.CreatorId}/)");
 
-					eb.AddField("Downloads", $"{modData.downloads:n0}", true);
-					eb.AddField("Views", $"{modData.views:n0}", true);
-					eb.AddField("Favorites", $"{modData.favorited:n0}", true);
+					eb.AddField("Downloads", $"{modData.SubscriberCount:n0}", true);
+					eb.AddField("Views", $"{modData.Views:n0}", true);
+					eb.AddField("Favorites", $"{modData.FavoritedCount:n0}", true);
 
 					// if vote data exists
-					if (modData.voteData.HasValues)
+					if (modData.VoteData != null)
 					{
 						// calculate star amount
-						double fullStarCount = 5 * modData.voteData["score"]?.Value<double>() ?? 0;
+						double fullStarCount = 5 * modData.VoteData.score;
 						double emptyStarCount = 5 - fullStarCount;
 
 						// concatinate star characters to string
@@ -508,27 +514,32 @@ namespace tModloaderDiscordBot.Modules
 							new string(Enumerable.Repeat('\u2606', (int)Math.Round(emptyStarCount)).ToArray()));
 
 						eb.AddField("Votes", s, true);
-						eb.AddField("Upvotes", modData.voteData["votes_up"]?.Value<int>(), true);
-						eb.AddField("Downvotes", modData.voteData["votes_down"]?.Value<int>(), true);
+						eb.AddField("Upvotes", modData.VoteData.votes_up, true);
+						eb.AddField("Downvotes", modData.VoteData.votes_down, true);
 					}
 
-					eb.AddField("Mod Side", modData.modside);
-					eb.AddField("tModLoader Version", modData.tmodloaderVersion);
+					eb.AddField("Mod Side", modData.ModSide);
+					eb.AddField("tModLoader Version", modData.NewestTmlVersion);
 
-					eb.AddField("Last updated", $"<t:{modData.timeUpdated}:d>", true);
-					eb.AddField("Time created", $"<t:{modData.timeCreated}:d>", true);
+					eb.AddField("Last updated", $"<t:{modData.TimeUpdated}:d>", true);
+					eb.AddField("Time created", $"<t:{modData.TimeCreated}:d>", true);
 
 					// if tags are present
-					if (modJData["tags"].HasValues)
+					/*if (modJData["tags"].HasValues)
 					{
 						var tags = modJData["tags"];
 						var tagNames = tags?.Select(x => x["display_name"].Value<string>());
 						eb.AddField("Tags", string.Join(", ", tagNames));
+					}*/
+
+					if(modData.Tags != null)
+					{
+						eb.AddField("Tags", string.Join(", ", modData.Tags));
 					}
 
-					if (!string.IsNullOrEmpty(modData.homepage))
+					if (!string.IsNullOrEmpty(modData.Homepage))
 					{
-						eb.AddField("Homepage", modData.homepage);
+						eb.AddField("Homepage", modData.Homepage);
 					}
 
 					var embed = eb.Build();
@@ -711,9 +722,12 @@ namespace tModloaderDiscordBot.Modules
 			var mods = ModsList.Where(m => string.Equals(m, mod, StringComparison.CurrentCultureIgnoreCase));
 
 			if (mods.Any()) return (true, string.Empty);
+
+			/*
 			// This should find mods published within last few hours.
 			var cached = await (legacy ? LegacyModService.TryCacheMod(mod) : ModService.TryCacheMod(mod));
 			if (cached) return (true, string.Empty);
+			*/
 
 			const string msg = "Mod with that name doesn\'t exist";
 			var modMsg = "\nNo similar mods found..."; ;
