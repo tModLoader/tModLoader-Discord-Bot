@@ -43,6 +43,7 @@ namespace tModloaderDiscordBot.Modules
 			try
 			{
 				await channel.ModifyAsync(p => p.SlowModeInterval = intervalInSeconds);
+				await ReplyAsync($"Slowmode for this channel has been set to {intervalInSeconds} seconds");
 			}
 			catch
 			{
