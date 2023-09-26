@@ -6,7 +6,6 @@ using tModloaderDiscordBot.Preconditions;
 namespace tModloaderDiscordBot.Modules
 {
 	[Group("slowmode")]
-	[HasPermission]
 	public class SlowmodeModule : ConfigModuleBase
 	{
 		[Command("reset")]
@@ -50,6 +49,16 @@ namespace tModloaderDiscordBot.Modules
 				await ReplyAsync("Failed to modify slowmode, does the bot have sufficient permissions?");
 				return;
 			}
+		}
+
+		[Command]
+		[Priority(-99)]
+		public async Task Default([Remainder] string toCheckParam = "")
+		{
+			// Not sure why, but giving permissions wouldn't work unless there was a command without [HasPermission]:
+			// admin: .perm add slowmode userid -> "slowmode is not a known command or module"
+			// user: .slowmode reset -> "slowmode is not a known command or module" and then "User not found."
+			var msg = await Context.Channel.SendMessageAsync("You do not have permission to use this...");
 		}
 	}
 }
