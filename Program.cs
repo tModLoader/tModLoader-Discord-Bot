@@ -36,6 +36,7 @@ namespace tModloaderDiscordBot
 						.AddSingleton<RecruitmentChannelService>()
 						.AddSingleton<BanAppealChannelService>()
 						.AddSingleton<SupportChannelAutoMessageService>()
+						.AddSingleton<CrosspostService>()
 						//.AddSingleton<ReactionRoleService>()
 						// How to use resources:
 						//_services.GetRequiredService<ResourceManager>().GetString("key")
@@ -143,6 +144,7 @@ namespace tModloaderDiscordBot
 			await _services.GetRequiredService<RecruitmentChannelService>().SetupAsync();
 			await _services.GetRequiredService<BanAppealChannelService>().Setup();
 			await _services.GetRequiredService<SupportChannelAutoMessageService>().Setup();
+			await _services.GetRequiredService<CrosspostService>().Setup();
 			return;
 		}
 	}
