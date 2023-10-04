@@ -35,6 +35,7 @@ namespace tModloaderDiscordBot.Services
 					// TODO Make this configurable
 					banAppealRoleName = "BEGONE, EVIL!";
 					banAppealRole = banAppealChannel.Guild.Roles.FirstOrDefault(x => x.Name == banAppealRoleName) as SocketRole;
+					_loggingService.Log(new LogMessage(LogSeverity.Info, "BanAppeal", $"BanAppeal role {(banAppealRole == null ? "not found" : "found")}."));
 					return true;
 				});
 			return _isSetup;
@@ -49,6 +50,7 @@ namespace tModloaderDiscordBot.Services
 			{
 				if (after.Roles.Contains(banAppealRole) && !task.Result.Roles.Contains(banAppealRole))
 				{
+					await _loggingService.Log(new LogMessage(LogSeverity.Info, "BanAppeal", $"New user added to BanAppeal, sending message to {after.Username}."));
 					var embed = new EmbedBuilder()
 					.WithColor(Color.Blue)
 					.WithDescription($"Welcome to {banAppealChannel.Mention} {after.Mention}. You have been placed here for violating a rule. Being placed here counts as a warning. If this is your first time here, if you promise to remember the rules and not do it again, we will let you out.")

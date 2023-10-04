@@ -70,12 +70,12 @@ namespace tModloaderDiscordBot.Services
 			if (!await Setup())
 				return;
 
-			if (thread.ParentChannel != supportChannel)
+			if (thread.ParentChannel != supportForum)
 				return;
 
 			if (!thread.HasJoined) // called when created and when user is added, send message adds the bot, so this check is needed to prevent double posting.
 			{
-				await thread.SendMessageAsync($"Welcome to {supportChannel.Mention}. Before someone helps you, please first consult the pins in {supportChannel.Mention} and try all the suggestions that might fit your particular issue.\n\nIf the pins do not solve your issue, please post all log files by dragging and dropping them into this chat. In Steam right click on `tModLoader` in the library, then hover over `Manage` and click on `Browse local files`. In the folder that appears find `tModLoader-Logs` and open that folder. Inside that folder are the logs files. Select them all except the `Old` folder and drag them into this chat. If you need a visual guide to this process watch this: <https://gfycat.com/CarefreeVastFrillneckedlizard>");
+				await thread.SendMessageAsync($"Welcome to {supportForum.Mention}. Before someone helps you, please first consult the information in {supportForumPinnedThread.Mention} and try all the suggestions that might fit your particular issue, especially in the linked FAQ page.\n\nIf the information in the pinned thread does not solve your issue, please post all log files by dragging and dropping them into this chat. In Steam right click on `tModLoader` in the library, then hover over `Manage` and click on `Browse local files`. In the folder that appears find `tModLoader-Logs` and open that folder. Inside that folder are the logs files. Select them all except the `Old` folder and drag them into this chat. If you need a visual guide to this process watch this: https://github.com/tModLoader/tModLoader/assets/4522492/3f4efa43-753f-4733-b630-ba85e711340c");
 
 				// TODO: use new ComponentBuilder().WithButton to spawn button to allow the user and any support staff to archive the thread to clean up the sidebar. (is archive the same as close? Will this remove it from all users sidebar?)
 				//await thread.ModifyAsync(x => x.Archived = true);
