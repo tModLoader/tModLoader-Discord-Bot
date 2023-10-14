@@ -22,9 +22,9 @@ namespace tModloaderDiscordBot.Services
 		{
 		}
 		
-		internal const string WidgetUrl = "https://tml-readme-card.repl.co/?v=1.4&modname=";
-		//private const string ModInfoUrl = "https://tmlapis.tomat.dev/1.4/mod/";
-		//private const string ModListUrl = "https://tmlapis.tomat.dev/1.4/list/";
+		internal const string WidgetUrl = "https://tml-card.le0n.dev/?v=1.4&modname=";
+		//private const string ModInfoUrl = "https://tmlapis.le0n.dev/1.4/mod/";
+		//private const string ModListUrl = "https://tmlapis.le0n.dev/1.4/list/";
 		
 		private static string ModDir => "mods/1.4";
 		private static Timer _updateTimer;
