@@ -10,11 +10,10 @@ namespace tModloaderDiscordBot.Services
 		{
 		}
 		
-		private const string AuthorInfoUrl = "https://tmlapis.tomat.dev/1.4/author/";
-		private const string LegacyAuthorInfoUrl = "https://tmlapis.tomat.dev/1.3/author/";
-		internal const string WidgetUrl = "https://tml-readme-card.repl.co/?steamid64=";
-		internal const string LegacyWidgetUrl = "https://tml-readme-card.repl.co/?v=1.3&steamid64=";
-
+		private const string AuthorInfoUrl = "https://tmlapis.le0n.dev/1.4/author/";
+		private const string LegacyAuthorInfoUrl = "https://tmlapis.le0n.dev/1.3/author/";
+		internal const string WidgetUrl = "https://tml-card.le0n.dev/?steamid64=";
+		internal const string LegacyWidgetUrl = "https://tml-card.le0n.dev/?v=1.3&steamid64=";
 		
 		private static async Task<string> GetString(string url)
 		{
