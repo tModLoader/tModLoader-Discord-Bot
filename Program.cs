@@ -33,6 +33,7 @@ namespace tModloaderDiscordBot
 						.AddSingleton<UserHandlerService>()
 						.AddSingleton<CommandHandlerService>()
 						.AddSingleton<HastebinService>()
+						.AddSingleton<AutoPinService>()
 						.AddSingleton<RecruitmentChannelService>()
 						.AddSingleton<BanAppealChannelService>()
 						.AddSingleton<SupportChannelAutoMessageService>()
