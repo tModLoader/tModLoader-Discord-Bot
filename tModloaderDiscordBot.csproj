@@ -6,6 +6,7 @@
     <StartupObject>tModloaderDiscordBot.Program</StartupObject>
     <RuntimeIdentifiers>linux-arm</RuntimeIdentifiers>
     <Configurations>Debug;Release;Debug - Test Bot</Configurations>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Test Bot|AnyCPU'">

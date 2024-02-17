@@ -33,6 +33,7 @@ namespace tModloaderDiscordBot
 						.AddSingleton<UserHandlerService>()
 						.AddSingleton<CommandHandlerService>()
 						.AddSingleton<HastebinService>()
+						.AddSingleton<AutoPinService>()
 						.AddSingleton<RecruitmentChannelService>()
 						.AddSingleton<BanAppealChannelService>()
 						.AddSingleton<SupportChannelAutoMessageService>()
@@ -76,6 +77,7 @@ namespace tModloaderDiscordBot
 			await _services.GetRequiredService<CommandHandlerService>().InitializeAsync();
 			_services.GetRequiredService<HastebinService>();
 			_services.GetRequiredService<LoggingService>().Initialize();
+			_services.GetRequiredService<AutoPinService>();
 
 			_client.Ready += ClientReady;
 			_client.GuildAvailable += ClientGuildAvailable;
