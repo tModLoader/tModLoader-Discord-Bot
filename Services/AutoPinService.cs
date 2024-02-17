@@ -13,10 +13,10 @@ public class AutoPinService : BaseService
 {
 	public AutoPinService(IServiceProvider services) : base(services)
 	{
-		_client.ChannelCreated += ChannelCreated;
+		_client.ThreadCreated += ThreadCreated;
 	}
 
-	private async Task ChannelCreated(SocketChannel arg)
+	private async Task ThreadCreated(SocketThreadChannel arg)
 	{
 		// Must be a thread
 		if (arg is not SocketThreadChannel thread)
@@ -26,7 +26,8 @@ public class AutoPinService : BaseService
 		if (thread.ParentChannel is not SocketForumChannel forum)
 			return;
 
-		if ((await thread.GetMessagesAsync().FirstAsync(m => m is IUserMessage)) is not IUserMessage firstMessage)
+		var messages = await thread.GetMessagesAsync().FlattenAsync();
+		if (messages.FirstOrDefault() is not IUserMessage firstMessage)
 			return;
 
 		if (firstMessage.IsPinned)

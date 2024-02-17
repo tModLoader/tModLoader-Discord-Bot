@@ -77,6 +77,7 @@ namespace tModloaderDiscordBot
 			await _services.GetRequiredService<CommandHandlerService>().InitializeAsync();
 			_services.GetRequiredService<HastebinService>();
 			_services.GetRequiredService<LoggingService>().Initialize();
+			_services.GetRequiredService<AutoPinService>();
 
 			_client.Ready += ClientReady;
 			_client.GuildAvailable += ClientGuildAvailable;
