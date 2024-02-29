@@ -22,7 +22,7 @@ namespace tModloaderDiscordBot.Modules
 			modName = ModService.Mods.FirstOrDefault(m => string.Equals(m, modName, StringComparison.CurrentCultureIgnoreCase));
 			if (modName == null)
 			{
-				await ReplyAsync($"Mod with that name doesn't exist");
+				await RespondAsync($"Mod with that name doesn't exist", ephemeral: true);
 				return;
 			}
 
