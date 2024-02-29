@@ -132,7 +132,8 @@ namespace tModloaderDiscordBot
 			//await _reactionRoleService.Maintain(_client);
 
 			await _services.GetRequiredService<LoggingService>().Log(new LogMessage(LogSeverity.Info, "ClientReady", "Done."));
-			await _client.SetGameAsync("tModLoader " + LegacyModService.tMLVersion);
+			// await _client.SetGameAsync("tModLoader " + LegacyModService.tMLVersion); TODO: Report the latest stable automatically? Would need to retrieve it each launch since it changes frequently.
+			await _client.SetGameAsync("tModLoader");
 			await ClientLatencyUpdated(_client.Latency, _client.Latency);
 #if !TESTBOT
 			var botChannel = (ISocketMessageChannel)await _client.GetChannelAsync(242228770855976960);

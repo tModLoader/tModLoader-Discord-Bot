@@ -10,6 +10,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace tModloaderDiscordBot.Services
 {
+	/// <summary>
+	/// Automatically publishes all messages posted in 1․4․4-mod-porting-progress
+	/// </summary>
 	internal class CrosspostService : BaseService
 	{
 		internal ITextChannel crosspostChannel;
@@ -41,6 +44,7 @@ namespace tModloaderDiscordBot.Services
 				//|| !(message.Channel is SocketTextChannel channel))
 				return;
 
+			// await _loggingService.Log(new LogMessage(LogSeverity.Info, "Crosspost", $"Attempting to publish message {message.Id}."));
 			await message.CrosspostAsync();
 		}
 
