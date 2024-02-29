@@ -530,98 +530,7 @@ namespace tModloaderDiscordBot.Modules
 					}
 					else modName = str;
 
-					// Some mod is found continue.
-					string modFileData = await FileUtils.FileReadToEndAsync(new SemaphoreSlim(1, 1), ModService.ModPath(modName));
-					var modData = new ModInfo(JObject.Parse(modFileData), true);
-
-					/*
-					var modJData = JObject.Parse(await FileUtils.FileReadToEndAsync(new SemaphoreSlim(1, 1), ModService.ModPath(modName)));
-
-					// parse json into object
-					var modData = new
-					{
-						displayName = modJData["display_name"]?.Value<string>(),
-						internalName = modJData["internal_name"]?.Value<string>(),
-						modID = modJData["mod_id"]?.Value<string>(),
-						version = modJData["version"]?.Value<string>(),
-						workshopIconURL = modJData["workshop_icon_url"]?.Value<string>(),
-						author = modJData["author"]?.Value<string>(),
-						authorID = modJData["author_id"]?.Value<string>(),
-						downloads = modJData["downloads_total"]?.Value<int>(),
-						views = modJData["views"]?.Value<int>(),
-						favorited = modJData["favorited"]?.Value<int>(),
-						voteData = modJData["vote_data"]?.Value<JToken>(),
-						modside = modJData["modside"]?.Value<string>(),
-						tmodloaderVersion = modJData["tmodloader_version"]?.Value<string>(),
-						timeCreated = modJData["time_created"]?.Value<int>(),
-						timeUpdated = modJData["time_updated"]?.Value<int>(),
-						homepage = modJData["homepage"]?.Value<string>()
-					};
-					*/
-
-					// create embed
-					var eb = new EmbedBuilder()
-						.WithTitle($"Mod: {modData.DisplayName} ({modData.InternalName}) {modData.NewestVersion}")
-						.WithCurrentTimestamp()
-						.WithAuthor(new EmbedAuthorBuilder
-						{
-							IconUrl = Context.Message.Author.GetAvatarUrl(),
-							Name = $"Requested by {Context.Message.Author.FullName()}"
-						})
-						.WithUrl($"https://steamcommunity.com/sharedfiles/filedetails/?id={modData.WorkshopId}")
-						.WithThumbnailUrl(modData.WorkshopIconURL);
-
-					// add fields
-					eb.AddField("Author",
-						$"[{modData.AuthorName} ({modData.CreatorId})]" +
-						$"(https://steamcommunity.com/profiles/{modData.CreatorId}/)");
-
-					eb.AddField("Downloads", $"{modData.SubscriberCount:n0}", true);
-					eb.AddField("Views", $"{modData.Views:n0}", true);
-					eb.AddField("Favorites", $"{modData.FavoritedCount:n0}", true);
-
-					// if vote data exists
-					if (modData.VoteData != null)
-					{
-						// calculate star amount
-						double fullStarCount = 5 * modData.VoteData.score;
-						double emptyStarCount = 5 - fullStarCount;
-
-						// concatinate star characters to string
-						string s = string.Concat(
-							new string(Enumerable.Repeat('\u2605', (int)Math.Round(fullStarCount)).ToArray()),
-							new string(Enumerable.Repeat('\u2606', (int)Math.Round(emptyStarCount)).ToArray()));
-
-						eb.AddField("Votes", s, true);
-						eb.AddField("Upvotes", modData.VoteData.votes_up, true);
-						eb.AddField("Downvotes", modData.VoteData.votes_down, true);
-					}
-
-					eb.AddField("Mod Side", modData.ModSide);
-					eb.AddField("tModLoader Version", modData.NewestTmlVersion);
-
-					eb.AddField("Last updated", $"<t:{modData.TimeUpdated}:d>", true);
-					eb.AddField("Time created", $"<t:{modData.TimeCreated}:d>", true);
-
-					// if tags are present
-					/*if (modJData["tags"].HasValues)
-					{
-						var tags = modJData["tags"];
-						var tagNames = tags?.Select(x => x["display_name"].Value<string>());
-						eb.AddField("Tags", string.Join(", ", tagNames));
-					}*/
-
-					if(modData.Tags != null)
-					{
-						eb.AddField("Tags", string.Join(", ", modData.Tags));
-					}
-
-					if (!string.IsNullOrEmpty(modData.Homepage))
-					{
-						eb.AddField("Homepage", modData.Homepage);
-					}
-
-					var embed = eb.Build();
+					Embed embed = await GenerateModEmbed(modName, Context.Message.Author);
 					await ReplyAsync("", embed: embed);
 				}
 			}
@@ -630,6 +539,103 @@ namespace tModloaderDiscordBot.Modules
 				Console.WriteLine($"{nameof(DefaultModule)}.{nameof(Mod)}: An error occured generating the embed: {e.Message}\n{e.StackTrace}");
 				await ReplyAsync("an error occured generating the embed");
 			}
+		}
+
+		public static async Task<Embed> GenerateModEmbed(string modName, Discord.WebSocket.SocketUser requestor)
+		{
+			// Some mod is found continue.
+			string modFileData = await FileUtils.FileReadToEndAsync(new SemaphoreSlim(1, 1), ModService.ModPath(modName));
+			var modData = new ModInfo(JObject.Parse(modFileData), true);
+
+			/*
+			var modJData = JObject.Parse(await FileUtils.FileReadToEndAsync(new SemaphoreSlim(1, 1), ModService.ModPath(modName)));
+
+			// parse json into object
+			var modData = new
+			{
+				displayName = modJData["display_name"]?.Value<string>(),
+				internalName = modJData["internal_name"]?.Value<string>(),
+				modID = modJData["mod_id"]?.Value<string>(),
+				version = modJData["version"]?.Value<string>(),
+				workshopIconURL = modJData["workshop_icon_url"]?.Value<string>(),
+				author = modJData["author"]?.Value<string>(),
+				authorID = modJData["author_id"]?.Value<string>(),
+				downloads = modJData["downloads_total"]?.Value<int>(),
+				views = modJData["views"]?.Value<int>(),
+				favorited = modJData["favorited"]?.Value<int>(),
+				voteData = modJData["vote_data"]?.Value<JToken>(),
+				modside = modJData["modside"]?.Value<string>(),
+				tmodloaderVersion = modJData["tmodloader_version"]?.Value<string>(),
+				timeCreated = modJData["time_created"]?.Value<int>(),
+				timeUpdated = modJData["time_updated"]?.Value<int>(),
+				homepage = modJData["homepage"]?.Value<string>()
+			};
+			*/
+
+			// create embed
+			var eb = new EmbedBuilder()
+				.WithTitle($"Mod: {modData.DisplayName} ({modData.InternalName}) {modData.NewestVersion}")
+				.WithCurrentTimestamp()
+				.WithAuthor(new EmbedAuthorBuilder
+				{
+					IconUrl = requestor.GetAvatarUrl(),
+					Name = $"Requested by {requestor.FullName()}"
+				})
+				.WithUrl($"https://steamcommunity.com/sharedfiles/filedetails/?id={modData.WorkshopId}")
+				.WithThumbnailUrl(modData.WorkshopIconURL);
+
+			// add fields
+			eb.AddField("Author",
+				$"[{modData.AuthorName} ({modData.CreatorId})]" +
+				$"(https://steamcommunity.com/profiles/{modData.CreatorId}/)");
+
+			eb.AddField("Downloads", $"{modData.SubscriberCount:n0}", true);
+			eb.AddField("Views", $"{modData.Views:n0}", true);
+			eb.AddField("Favorites", $"{modData.FavoritedCount:n0}", true);
+
+			// if vote data exists
+			if (modData.VoteData != null)
+			{
+				// calculate star amount
+				double fullStarCount = 5 * modData.VoteData.score;
+				double emptyStarCount = 5 - fullStarCount;
+
+				// concatinate star characters to string
+				string s = string.Concat(
+					new string(Enumerable.Repeat('\u2605', (int)Math.Round(fullStarCount)).ToArray()),
+					new string(Enumerable.Repeat('\u2606', (int)Math.Round(emptyStarCount)).ToArray()));
+
+				eb.AddField("Votes", s, true);
+				eb.AddField("Upvotes", modData.VoteData.votes_up, true);
+				eb.AddField("Downvotes", modData.VoteData.votes_down, true);
+			}
+
+			eb.AddField("Mod Side", modData.ModSide);
+			eb.AddField("tModLoader Version", modData.NewestTmlVersion);
+
+			eb.AddField("Last updated", $"<t:{modData.TimeUpdated}:d>", true);
+			eb.AddField("Time created", $"<t:{modData.TimeCreated}:d>", true);
+
+			// if tags are present
+			/*if (modJData["tags"].HasValues)
+			{
+				var tags = modJData["tags"];
+				var tagNames = tags?.Select(x => x["display_name"].Value<string>());
+				eb.AddField("Tags", string.Join(", ", tagNames));
+			}*/
+
+			if (modData.Tags != null)
+			{
+				eb.AddField("Tags", string.Join(", ", modData.Tags));
+			}
+
+			if (!string.IsNullOrEmpty(modData.Homepage))
+			{
+				eb.AddField("Homepage", modData.Homepage);
+			}
+
+			var embed = eb.Build();
+			return embed;
 		}
 
 		[Command("author-legacy")]

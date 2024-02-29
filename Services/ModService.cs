@@ -33,9 +33,10 @@ namespace tModloaderDiscordBot.Services
 		public static string ModPath(string modname) =>
 			Path.Combine(ModDir, $"{modname}.json");
 
-		public static IEnumerable<string> Mods =>
+		private static List<string> _mods; // Need to cache more data probably.
+		public static IEnumerable<string> Mods => _mods ?? (_mods = 
 			Directory.GetFiles(ModDir, "*.json")
-				.Select(x => Path.GetFileNameWithoutExtension(x).RemoveWhitespace());
+				.Select(x => Path.GetFileNameWithoutExtension(x).RemoveWhitespace()).ToList());
 
 		public ModService Initialize()
 		{

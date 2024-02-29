@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -21,6 +22,7 @@ namespace tModloaderDiscordBot
 		private DiscordSocketClient _client;
 		private IServiceProvider _services;
 		private LoggingService _loggingService;
+		private InteractionService _interactionService;
 		//private ReactionRoleService _reactionRoleService;
 
 		private async Task StartAsync()
@@ -62,7 +64,7 @@ namespace tModloaderDiscordBot
 			});
 			_commandService = new CommandService(new CommandServiceConfig
 			{
-				DefaultRunMode = RunMode.Async,
+				DefaultRunMode = Discord.Commands.RunMode.Async,
 				CaseSensitiveCommands = false,
 #if TESTBOT
 				LogLevel = LogSeverity.Critical,
@@ -139,6 +141,21 @@ namespace tModloaderDiscordBot
 			var botChannel = (ISocketMessageChannel)await _client.GetChannelAsync(242228770855976960);
 			await botChannel.SendMessageAsync("Bot has started successfully.");
 #endif
+
+			_interactionService = new InteractionService(_client);
+			await _interactionService.AddModulesAsync(System.Reflection.Assembly.GetEntryAssembly(), _services);
+#if TESTBOT
+			await _interactionService.RegisterCommandsToGuildAsync(276235094622994433); // replace this is testing on your own server.
+#else
+			await _interactionService.RegisterCommandsToGuildAsync(103110554649894912);
+			// await interactionService.RegisterCommandsGloballyAsync();
+#endif
+			_client.InteractionCreated += async interaction =>
+			{
+				var ctx = new SocketInteractionContext(_client, interaction);
+				await _interactionService.ExecuteCommandAsync(ctx, _services);
+			};
+
 			Ready = true;
 		}
 
