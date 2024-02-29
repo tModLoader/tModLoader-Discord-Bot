@@ -10,6 +10,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,9 +31,87 @@ namespace tModloaderDiscordBot.Modules
 		//{
 		//}
 
+		[Command("help")]
+		[Summary("Shows a list of commands")]
+		[Remarks("Usage: `.help [command or alias]`\nExample: `.help em`")]
+		public async Task Help([Remainder] string command = "")
+		{
+			EmbedBuilder e = new EmbedBuilder()
+				.WithAuthor(new EmbedAuthorBuilder
+				{
+					IconUrl = Context.Message.Author.GetAvatarUrl(),
+					Name = $"Requested by {Context.Message.Author.FullName()}"
+				})
+				.WithCurrentTimestamp();
+			
+			var methods = GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance);
+			if (methods.Length == 0)
+			{
+				await ReplyAsync($"Error: No commands are defined");
+				return;
+			}
+			
+			if (!string.IsNullOrWhiteSpace(command))
+			{
+				var method = methods.FirstOrDefault(x => x.GetCustomAttribute<CommandAttribute>()?.Text == command ||
+				                                         (x.GetCustomAttribute<AliasAttribute>()?.Aliases.Contains(command) ?? false));
+				if (method is null)
+				{
+					await ReplyAsync($"Command `{command}` not found.");
+					return;
+				}
+
+				e.Title = '.' + method.GetCustomAttribute<CommandAttribute>()!.Text;
+				if (method.GetCustomAttribute<SummaryAttribute>() is { } descAttr)
+				{
+					e.AddField("Description", descAttr.Text);
+				}
+
+				if (method.GetCustomAttribute<AliasAttribute>() is { Aliases.Length: > 0 } aliasAttr)
+				{
+					e.AddField("Aliases", $".{string.Join(", .", aliasAttr.Aliases)}");
+				}
+				if (method.GetCustomAttribute<RemarksAttribute>() is { } remarksAttr)
+				{
+					e.AddField("Usage", remarksAttr.Text);
+				}
+
+				await ReplyAsync(embed: e.Build());
+				return;
+			}
+
+			foreach (var method in methods)
+			{
+				var cmdAttr = method.GetCustomAttribute<CommandAttribute>();
+				if (cmdAttr is null)
+					continue;
+
+				string title = '.' + cmdAttr.Text;
+				if (method.GetCustomAttribute<AliasAttribute>() is { } aliasAttr)
+				{
+					title += $" (.{string.Join(", .", aliasAttr.Aliases)})";
+				}
+
+				string description = string.Empty;
+				if (method.GetCustomAttribute<SummaryAttribute>() is { } descAttr)
+				{
+					description = descAttr.Text;
+				}
+
+				if (method.GetCustomAttribute<RemarksAttribute>() is { } remarksAttr)
+				{
+					description += $"\n{remarksAttr.Text}";
+				}
+
+				e.AddField(title, description);
+			}
+
+			await ReplyAsync(embed: e.Build());
+		}
+
 		[Command("ping")]
 		[Summary("Returns the bot response time")]
-		[Remarks("ping")]
+		[Remarks("Usage: `.ping`")]
 		public async Task Ping([Remainder] string _ = null)
 		{
 			string GetDeltaString(long elapsedTime, int latency) => $"\nMessage response time: `{elapsedTime} ms`" +
@@ -60,7 +139,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("widget-legacy")]
 		[Alias("widgetimg-legacy", "widgetimage-legacy", "widget13")]
 		[Summary("Generates a widget image of specified mod")]
-		[Remarks("widget13 <mod>\nwidget13 examplemod")]
+		[Remarks("Usage: `.widget13 <mod>`\nExample: `.widget13 examplemod`")]
 		public async Task LegacyWidget([Remainder]string mod)
 		{
 			mod = mod.RemoveWhitespace();
@@ -92,7 +171,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("widget")]
 		[Alias("widgetimg", "widgetimage")]
 		[Summary("Generates a widget image of specified mod")]
-		[Remarks("widget <mod>\nwidget examplemod")]
+		[Remarks("Usage: `.widget <mod name or mod id>`\nExample: `.widget examplemod`")]
 		public async Task Widget([Remainder]string mod)
 		{
 			mod = mod.RemoveWhitespace();
@@ -126,7 +205,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("author-widget")]
 		[Alias("author-widgetimg", "author-widgetimage")]
 		[Summary("Generates a widget image of the specified author")]
-		[Remarks("author-widget <steamid64>\nauthor-widget 76561198278789341")]
+		[Remarks("Usage: `.author-widget <steamid64 or steam name (unreliable)>`\nExample: `.author-widget 76561198278789341`")]
 		public async Task AuthorWidget([Remainder]string steamid)
 		{
 			steamid = steamid.RemoveWhitespace();
@@ -163,7 +242,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("author-widget-legacy")]
 		[Alias("author-widgetimg-legacy", "author-widgetimage-legacy", "author-widget13")]
 		[Summary("Generates a widget image of the specified author")]
-		[Remarks("author-widget13 <steamid64>\nauthor-widget13 76561198278789341")]
+		[Remarks("Usage: `.author-widget13 <steamid64 or steam name (unreliable)>`\nExample: `.author-widget13 76561198278789341`")]
 		public async Task LegacyAuthorWidget([Remainder]string steamid)
 		{
 			steamid = steamid.RemoveWhitespace();
@@ -199,7 +278,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("wikis")]
 		[Alias("ws")]
 		[Summary("Generates a search for a term in tModLoader wiki")]
-		[Remarks("wikis <search term>\nwikis TagCompound")]
+		[Remarks("Usage: `.wikis <search term>`\nExample: `.wikis TagCompound`")]
 		public async Task WikiSearch([Remainder]string searchTerm)
 		{
 			searchTerm = searchTerm.Trim();
@@ -210,7 +289,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("examplemod")]
 		[Alias("em", "example")]
 		[Summary("Generates a search for a term in ExampleMod source code")]
-		[Remarks("examplemod <search term>\nexamplemod OnEnterWorld")]
+		[Remarks("Usage: `.examplemod <search term>`\nExample: `.examplemod OnEnterWorld`")]
 		public async Task ExampleModSearch([Remainder]string searchTerm)
 		{
 			searchTerm = searchTerm.Trim();
@@ -221,7 +300,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("microsoftdocs")]
 		[Alias("msdn", "microsoft")]
 		[Summary("Generates a search for a term in Microsoft documentation.")]
-		[Remarks("msdn <search term>\nmicrosoft Int16")]
+		[Remarks("Usage: `.msdn <search term>`\n`microsoft Int16`")]
 		public async Task MsdnSearch([Remainder]string searchTerm)
 		{
 			searchTerm = searchTerm.Trim();
@@ -236,7 +315,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("documentation")]
 		[Alias("doc", "docs")]
 		[Summary("Generates a link to tModLoader or Terraria class documentation")]
-		[Remarks("doc <classname>[.<field/method name>]\ndoc Item.value")]
+		[Remarks("Usage: `.doc <classname>[.<field/method name>]`\nExample: `.doc Item.value`")]
 		public async Task Documentation([Remainder]string searchTerm)
 		{
 			// TODO: use XML file to show inline documentation.
@@ -338,7 +417,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("mod-legacy")]
 		[Alias("modinfo-legacy", "mod13")]
 		[Summary("Shows info about a mod")]
-		[Remarks("mod13 <internal modname> --OR-- mod13 <part of name>\nmod13 examplemod")]
+		[Remarks("Usage: `.mod13 <internal modname>` --OR-- `mod13 <part of name>`\nExample: `.mod13 examplemod`")]
 		[Priority(-99)]
 		public async Task LegacyMod([Remainder] string mod)
 		{
@@ -424,7 +503,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("mod")]
 		[Alias("modinfo")]
 		[Summary("Shows info about a mod")]
-		[Remarks("mod <internal modname or mod id> \n`mod 2831018225` --OR-- `mod examplemod`")]
+		[Remarks("Usage: `.mod <internal modname or mod id>` \nExample: `.mod 2831018225` --OR-- `.mod examplemod`")]
 		[Priority(-99)]
 		public async Task Mod([Remainder] string modName)
 		{
@@ -556,7 +635,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("author-legacy")]
 		[Alias("authorinfo-legacy", "author13")]
 		[Summary("Shows info about an author")]
-		[Remarks("author13 <steamid64 or steam name (not reliable)>\n`author13 76561198278789341` --OR-- `author13 NotLe0n`")]
+		[Remarks("Usage: `.author13 <steamid64 or steam name (unreliable)>`\nExample: `.author13 76561198278789341` --OR-- `.author13 NotLe0n`")]
 		[Priority(-99)]
 		public async Task LegacyAuthor([Remainder] string steamID)
 		{
@@ -627,7 +706,7 @@ namespace tModloaderDiscordBot.Modules
 		[Command("author")]
 		[Alias("authorinfo")]
 		[Summary("Shows info about an author")]
-		[Remarks("author <steamid64 or steam name (not reliable)> \n`author 76561198278789341` --OR-- `author NotLe0n`")]
+		[Remarks("Usage: `.author <steamid64 or steam name (unreliable)>`\nExample: `.author 76561198278789341` --OR-- `.author NotLe0n`")]
 		[Priority(-99)]
 		public async Task Author([Remainder] string steamID)
 		{
