@@ -81,10 +81,11 @@ namespace tModloaderDiscordBot.Services
 					//await Log($"Maintenance determined: over 6 hours. Updating...");
 					await Log($"Maintenance determined: new day. Updating...");
 
+					// TODO: peak ram usage too high, this loads all, makes a json string, and then saves, we could save as we go? or maybe don't double convert the results?
 					string data = await DownloadModListData();
 					var modList = JArray.Parse(data);
 
-					var mods = modList.Children().Select(j => new ModInfo((JObject)j, true)).ToArray();
+					var mods = modList.Children().Select(j => new ModInfo((JObject)j, true))/*.ToArray()*/;
 
 					/*foreach (var jToken in modList)
 					{
@@ -102,6 +103,8 @@ namespace tModloaderDiscordBot.Services
 
 					await FileUtils.FileWriteAsync(_semaphore, path, BotUtils.GetCurrentUnixTimestampSeconds().ToString());
 					await Log($"File write successful");
+					modList.Clear(); // Not sure why this list and contents aren't garbage collected normally, but clearing it helps.
+					GC.Collect();
 				}
 			}
 			catch (Exception)
