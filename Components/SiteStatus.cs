@@ -6,14 +6,6 @@ using Newtonsoft.Json;
 
 namespace tModloaderDiscordBot.Components
 {
-	public enum SiteStatusCode
-	{
-		Offline,
-		Online,
-		Unknown,
-		Invalid
-	}
-
 	public class SiteStatus
 	{
 		[JsonIgnore]

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using tModloaderDiscordBot.Services;
 using System.Net;
 using tModloaderDiscordBot.Utils;
+using tModloaderDiscordBot.Interactions;
 
 namespace tModloaderDiscordBot.Modules
 {
@@ -40,13 +41,5 @@ namespace tModloaderDiscordBot.Modules
 		}
 	}
 
-	public class ModNameAutocompleteHandler : AutocompleteHandler
-	{
-		public override async Task<AutocompletionResult> GenerateSuggestionsAsync(IInteractionContext context, IAutocompleteInteraction autocompleteInteraction, IParameterInfo parameter, IServiceProvider services)
-		{
-			string userInput = autocompleteInteraction.Data.Current.Value.ToString();
-			var mods = ModService.Mods.Where(m => m.Contains(userInput, StringComparison.CurrentCultureIgnoreCase)).Take(10).Select(x => new AutocompleteResult(x, x));
-			return AutocompletionResult.FromSuccess(mods);
-		}
-	}
+
 }
