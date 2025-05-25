@@ -69,7 +69,7 @@ namespace tModloaderDiscordBot.Services
 		{
 			await Log("Starting 1.3 maintenance");
 			await Log("Skipping 1.3 maintenance, too buggy.");
-			return;
+			//return;
 			// Create dirs
 			Directory.CreateDirectory(ModDir);
 

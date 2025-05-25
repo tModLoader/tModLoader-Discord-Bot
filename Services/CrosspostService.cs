@@ -32,7 +32,7 @@ namespace tModloaderDiscordBot.Services
 
 		private async Task _client_MessageReceived(SocketMessage socketMessage)
 		{
-			if (!await Setup())
+			if (!await SetupAsync())
 				return;
 
 			if (socketMessage?.Channel?.Id != crosspostChannelId)
@@ -48,7 +48,7 @@ namespace tModloaderDiscordBot.Services
 			await message.CrosspostAsync();
 		}
 
-		internal async Task<bool> Setup()
+		internal async Task<bool> SetupAsync()
 		{
 			if (!_isSetup)
 				_isSetup = await Task.Run(async () =>
