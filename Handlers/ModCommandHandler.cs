@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Discord.WebSocket;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using tModloaderDiscordBot.Modules;
@@ -8,6 +9,9 @@ using tModloaderDiscordBot.Utils;
 
 namespace tModloaderDiscordBot.Handlers;
 
+/// <summary>
+/// Executes the mod command, which replies with an embed
+/// </summary>
 public class ModCommandHandler : BaseCommandHandler<ModCommandNotification>
 {
 	protected override async Task RunCommand(ModCommandNotification notification)
@@ -19,11 +23,11 @@ public class ModCommandHandler : BaseCommandHandler<ModCommandNotification>
 
 		if (modName == null)
 		{
-			await RespondAsync("Mod with that name doesn't exist", ephemeral: true);
+			await Interaction.RespondAsync("Mod with that name doesn't exist", ephemeral: true);
 			return;
 		}
 
-		var embed = await DefaultModule.GenerateModEmbed(modName, Context.Interaction.User);
-		await RespondAsync(embed: embed);
+		var embed = await DefaultModule.GenerateModEmbed(modName, Context.Interaction.User as SocketUser);
+		await Interaction.RespondAsync(embed: embed);
 	}
 }

@@ -75,8 +75,9 @@ namespace tModloaderDiscordBot.Services
 				}
 
 				// Needs to maintain data
+				if(false)
 				//if (dateDiff == TimeSpan.MinValue || dateDiff.TotalHours > 5.99d)
-				if (todayUTC.Date != savedBinaryDate.Date)
+					//if (todayUTC.Date != savedBinaryDate.Date)
 				{
 					//await Log($"Maintenance determined: over 6 hours. Updating...");
 					await Log($"Maintenance determined: new day. Updating...");
