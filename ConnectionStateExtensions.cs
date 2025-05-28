@@ -2,7 +2,7 @@
 
 namespace tModloaderDiscordBot;
 
-public static class ProgramExtensions
+public static class ConnectionStateExtensions
 {
 	public static UserStatus ToUserStatus(this ConnectionState state)
 	{

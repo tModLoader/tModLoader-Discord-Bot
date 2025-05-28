@@ -8,11 +8,16 @@
     <Configurations>Debug;Release;Debug - Test Bot</Configurations>
     <LangVersion>12</LangVersion>
     <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Test Bot|AnyCPU'">
     <DefineConstants>TRACE;TESTBOT</DefineConstants>
     <Optimize>false</Optimize>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
