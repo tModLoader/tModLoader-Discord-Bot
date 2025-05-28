@@ -4,6 +4,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Reflection;
 using System.Threading.Tasks;
 using tModloaderDiscordBot.Factories;
 using tModloaderDiscordBot.Services;
@@ -20,12 +21,14 @@ namespace tModloaderDiscordBot
 
 		public static bool Ready;
 
+		/// <summary>
+		/// Starts the application
+		/// </summary>
 		public static void Main(string[] args)
 			=> new Program().RunAsync().GetAwaiter().GetResult();
 
 
 		internal static IUser BotOwner;
-
 
 		/// <summary>
 		/// Returns a service from the service provider
@@ -72,8 +75,7 @@ namespace tModloaderDiscordBot
 		/// </summary>
 		private readonly Lazy<IServiceCollection> _serviceCollection = new(ServiceProviderFactory.CreateServiceCollection);
 
-		private string _token => Environment.GetEnvironmentVariable(_envTokenKey);
-
+		private string? _token => Environment.GetEnvironmentVariable(_envTokenKey);
 
 		/// <summary>
 		/// Initializes the program and starts the bot
@@ -112,7 +114,6 @@ namespace tModloaderDiscordBot
 		{
 			await GetService<CommandHandlerService>().InitializeAsync();
 			GetService<LoggingService>().Initialize();
-			GetService<AutoPinService>();
 		}
 
 		private Task AddEventHandlers()
@@ -135,19 +136,7 @@ namespace tModloaderDiscordBot
 
 		private async Task ClientLatencyUpdated(int i, int j)
 		{
-			UserStatus newUserStatus = UserStatus.Online;
-
-			switch (DiscordClient.ConnectionState)
-			{
-				case ConnectionState.Disconnected:
-					newUserStatus = UserStatus.DoNotDisturb;
-					break;
-				case ConnectionState.Connecting:
-					newUserStatus = UserStatus.Idle;
-					break;
-			}
-
-			await DiscordClient.SetStatusAsync(newUserStatus);
+			await DiscordClient.SetStatusAsync(DiscordClient.ConnectionState.ToUserStatus());
 		}
 
 		private async Task ClientReady()
@@ -159,6 +148,7 @@ namespace tModloaderDiscordBot
 			BotOwner = (await DiscordClient.GetApplicationInfoAsync()).Owner;
 
 			await GetService<GuildConfigService>().SetupAsync();
+			await GetService<DiscordEventListener>().SetupAsync();
 			await GetService<SiteStatusService>().UpdateAsync();
 			await GetService<ModService>().Initialize().Maintain();
 			await GetService<LegacyModService>().Initialize().Maintain();
@@ -174,7 +164,7 @@ namespace tModloaderDiscordBot
 #endif
 
 			InteractionService = new InteractionService(DiscordClient);
-			await InteractionService.AddModulesAsync(System.Reflection.Assembly.GetEntryAssembly(), ServiceProvider);
+			await InteractionService.AddModulesAsync(Assembly.GetEntryAssembly(), ServiceProvider);
 #if TESTBOT
 			await InteractionService.RegisterCommandsToGuildAsync(1236004871543718040); // replace this is testing on your own server.
 #else
