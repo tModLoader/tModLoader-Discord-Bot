@@ -82,7 +82,7 @@ namespace tModloaderDiscordBot.Components
 
 				string GetFromKVTags(string tagName)
 				{
-					var tag = kvtags.FirstOrDefault(x => (string)x["key"] == tagName);
+					var tag = kvtags?.FirstOrDefault(x => (string)x["key"] == tagName) ?? null;
 					if (tag == null)
 						return "";
 					return (string)tag["value"];
@@ -130,6 +130,9 @@ namespace tModloaderDiscordBot.Components
 
 		Version ParseVersion(string versionString)
 		{
+			if (string.IsNullOrWhiteSpace(versionString))
+				return new Version(1, 0);
+
 			var match = versionRegex.Match(versionString);
 
 			if (!match.Success || !Version.TryParse(match.Groups[1].Value, out var version))

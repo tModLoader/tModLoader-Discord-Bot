@@ -52,6 +52,7 @@ namespace tModloaderDiscordBot.Services
 			if (!_isSetup)
 				_isSetup = await Task.Run(async () =>
 				{
+					await _loggingService.Log(new LogMessage(LogSeverity.Info, "Support", $"Looking for Support forum"));
 					supportChannel = (ITextChannel)_client.GetChannel(supportChannelId);
 					supportForum = (IForumChannel)_client.GetChannel(supportForumId);
 					if (supportForum != null)
@@ -59,6 +60,10 @@ namespace tModloaderDiscordBot.Services
 						var activeThreads = await supportForum.GetActiveThreadsAsync();
 						supportForumPinnedThread = activeThreads.FirstOrDefault(x => x.Id == 1019968948738986064);
 						await _loggingService.Log(new LogMessage(LogSeverity.Info, "Support", $"Support pinned post {(supportForumPinnedThread == null ? "not found" : "found")}."));
+					}
+					else
+					{
+						await _loggingService.Log(new LogMessage(LogSeverity.Info, "Support", $"Support forum null"));
 					}
 					return true;
 				});
