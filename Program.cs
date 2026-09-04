@@ -4,97 +4,100 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Resources;
+using System.Reflection;
 using System.Threading.Tasks;
+using tModloaderDiscordBot.Factories;
 using tModloaderDiscordBot.Services;
 
 namespace tModloaderDiscordBot
 {
 	public class Program
 	{
+#if TESTBOT
+		private static readonly string _envTokenKey = "TmlTestToken";
+#else
+		private static readonly string  _envTokenKey = "TmlBotToken";
+#endif
+
 		public static bool Ready;
 
+		/// <summary>
+		/// Starts the application
+		/// </summary>
 		public static void Main(string[] args)
-			=> new Program().StartAsync().GetAwaiter().GetResult();
+			=> new Program().RunAsync().GetAwaiter().GetResult();
+
 
 		internal static IUser BotOwner;
-		private CommandService _commandService;
-		private DiscordSocketClient _client;
-		private IServiceProvider _services;
-		private LoggingService _loggingService;
-		private InteractionService _interactionService;
-		//private ReactionRoleService _reactionRoleService;
 
-		private async Task StartAsync()
+		/// <summary>
+		/// Returns a service from the service provider
+		/// </summary>
+		public T GetService<T>() where T : notnull => ServiceProvider.GetRequiredService<T>();
+
+		/// <summary>
+		/// The interaction service
+		/// </summary>
+		public InteractionService InteractionService { get; private set; }
+
+		/// <summary>
+		/// The command service
+		/// </summary>
+		public CommandService CommandService => _commandService.Value;
+
+		/// <summary>
+		/// The service collection
+		/// </summary>
+		public ServiceCollection ServiceCollection => _serviceCollection.Value as ServiceCollection;
+
+		/// <summary>
+		/// The service provider
+		/// </summary>
+		public ServiceProvider ServiceProvider => _serviceCollection.Value.BuildServiceProvider();
+
+		/// <summary>
+		/// The Discord Client instance
+		/// </summary>
+		public DiscordSocketClient DiscordClient => _client.Value as DiscordSocketClient;
+
+		/// <summary>
+		/// The Discord client, provided by the factory
+		/// </summary>
+		private readonly Lazy<IDiscordClient> _client = new(DiscordClientFactory.CreateDiscordSocketClient);
+
+		/// <summary>
+		/// The service provider, provided by the factory
+		/// </summary>
+		private readonly Lazy<CommandService> _commandService = new(CommandServiceFactory.CreateCommandService);
+
+		/// <summary>
+		/// The service provider, provided by the factory
+		/// </summary>
+		private readonly Lazy<IServiceCollection> _serviceCollection =
+			new(ServiceProviderFactory.CreateServiceCollection);
+
+		private string? _token => Environment.GetEnvironmentVariable(_envTokenKey, EnvironmentVariableTarget.Machine);
+
+		/// <summary>
+		/// Initializes the program and starts the bot
+		/// </summary>
+		private async Task RunAsync()
 		{
-			IServiceProvider BuildServiceProvider()
+			if (_token == null)
 			{
-				return new ServiceCollection()
-						.AddSingleton(_client)
-						.AddSingleton(_commandService)
-						.AddSingleton<UserHandlerService>()
-						.AddSingleton<CommandHandlerService>()
-						.AddSingleton<HastebinService>()
-						.AddSingleton<AutoPinService>()
-						.AddSingleton<RecruitmentChannelService>()
-						.AddSingleton<BanAppealChannelService>()
-						.AddSingleton<SupportChannelAutoMessageService>()
-						.AddSingleton<CrosspostService>()
-						//.AddSingleton<ReactionRoleService>()
-						// How to use resources:
-						//_services.GetRequiredService<ResourceManager>().GetString("key")
-						.AddSingleton(new ResourceManager("tModloaderDiscordBot.Properties.Resources", GetType().Assembly))
-						.AddSingleton<LoggingService>()
-						.AddSingleton<GuildConfigService>()
-						.AddSingleton<SiteStatusService>()
-						.AddSingleton<GuildTagService>()
-						.AddSingleton<PermissionService>()
-						.AddSingleton<LegacyModService>()
-						.AddSingleton<ModService>()
-						.AddSingleton<AuthorService>()
-						.BuildServiceProvider();
+				await Console.Out.WriteLineAsync(
+					"No token environment variable was found. The bot requires one to run. Did you make sure to have set the variable?");
+				await Console.Out.WriteLineAsync("If you wish to save a token, paste it and press enter:");
+				var input = await Console.In.ReadLineAsync();
+				Environment.SetEnvironmentVariable(_envTokenKey, input, EnvironmentVariableTarget.Machine);
 			}
 
-			_client = new DiscordSocketClient(new DiscordSocketConfig
-			{
-				GatewayIntents = (GatewayIntents.AllUnprivileged | GatewayIntents.GuildMembers) & ~(GatewayIntents.GuildScheduledEvents | GatewayIntents.GuildInvites),
-				AlwaysDownloadUsers = true,
-				LogLevel = LogSeverity.Verbose,
-				MessageCacheSize = 100
-			});
-			_commandService = new CommandService(new CommandServiceConfig
-			{
-				DefaultRunMode = Discord.Commands.RunMode.Async,
-				CaseSensitiveCommands = false,
-#if TESTBOT
-				LogLevel = LogSeverity.Critical,
-				ThrowOnError = true,
-#else
-				LogLevel = LogSeverity.Debug,
-				ThrowOnError = false
-#endif
-			});
+			await InstallServices();
+			await InitializeServices();
+			await AddEventHandlers();
 
-			_services = BuildServiceProvider();
-			await _services.GetRequiredService<CommandHandlerService>().InitializeAsync();
-			_services.GetRequiredService<HastebinService>();
-			_services.GetRequiredService<LoggingService>().Initialize();
-			_services.GetRequiredService<AutoPinService>();
-
-			_client.Ready += ClientReady;
-			_client.GuildAvailable += ClientGuildAvailable;
-			_client.LatencyUpdated += ClientLatencyUpdated;
-
-			// Begin our connection once everything is hooked up and ready to go
-			// Because this is async, this returns immediately (connection is handled on a separate thread by the con manager)
-			await _client.StartAsync().ContinueWith(async _ =>
-			{
-#if TESTBOT
-				await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TestBotToken"), validateToken: true);
-#else
-				await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TmlBotToken"), validateToken: true);
-#endif
-			});
+			await LoginAsync();
+			await StartAsync();
 
 			Console.Title = $@"tModLoader Bot - {DateTime.Now}";
 			await Console.Out.WriteLineAsync($"https://discordapp.com/api/oauth2/authorize?client_id=&scope=bot");
@@ -102,70 +105,90 @@ namespace tModloaderDiscordBot
 			await Task.Delay(-1);
 		}
 
+		private Task InstallServices()
+		{
+			ServiceCollection.AddSingleton(DiscordClient);
+			ServiceCollection.AddSingleton(CommandService);
+			return Task.CompletedTask;
+		}
+
+		private async Task InitializeServices()
+		{
+			await GetService<CommandHandlerService>().InitializeAsync();
+			GetService<LoggingService>().Initialize();
+		}
+
+		private Task AddEventHandlers()
+		{
+			DiscordClient.Ready += ClientReady;
+			DiscordClient.GuildAvailable += ClientGuildAvailable;
+			DiscordClient.LatencyUpdated += ClientLatencyUpdated;
+			return Task.CompletedTask;
+		}
+
+		private async Task StartAsync()
+		{
+			await DiscordClient.StartAsync();
+		}
+
+		private async Task LoginAsync()
+		{
+			await DiscordClient.LoginAsync(TokenType.Bot, _token, validateToken: true);
+		}
+
 		private async Task ClientLatencyUpdated(int i, int j)
 		{
-			UserStatus newUserStatus = UserStatus.Online;
-
-			switch (_client.ConnectionState)
-			{
-				case ConnectionState.Disconnected:
-					newUserStatus = UserStatus.DoNotDisturb;
-					break;
-				case ConnectionState.Connecting:
-					newUserStatus = UserStatus.Idle;
-					break;
-			}
-
-			await _client.SetStatusAsync(newUserStatus);
+			await DiscordClient.SetStatusAsync(DiscordClient.ConnectionState.ToUserStatus());
 		}
 
 		private async Task ClientReady()
 		{
 			Ready = false;
-			await _client.SetGameAsync("Bot is starting...");
-			await _client.SetStatusAsync(UserStatus.DoNotDisturb);
+			await DiscordClient.SetGameAsync("Bot is starting...");
+			await DiscordClient.SetStatusAsync(UserStatus.DoNotDisturb);
 
-			BotOwner = (await _client.GetApplicationInfoAsync()).Owner;
+			BotOwner = (await DiscordClient.GetApplicationInfoAsync()).Owner;
 
-			await _services.GetRequiredService<GuildConfigService>().SetupAsync();
-			await _services.GetRequiredService<SiteStatusService>().UpdateAsync();
-			await _services.GetRequiredService<ModService>().Initialize().Maintain();
-			await _services.GetRequiredService<LegacyModService>().Initialize().Maintain();
+			await GetService<GuildConfigService>().SetupAsync();
+			await GetService<DiscordEventListener>().SetupAsync();
+			await GetService<SiteStatusService>().UpdateAsync();
+			await GetService<ModService>().Initialize().Maintain();
+			await GetService<LegacyModService>().Initialize().Maintain();
 			//await _reactionRoleService.Maintain(_client);
 
-			await _services.GetRequiredService<LoggingService>().Log(new LogMessage(LogSeverity.Info, "ClientReady", "Done."));
+			await GetService<LoggingService>().Log(new LogMessage(LogSeverity.Info, "ClientReady", "Done."));
 			// await _client.SetGameAsync("tModLoader " + LegacyModService.tMLVersion); TODO: Report the latest stable automatically? Would need to retrieve it each launch since it changes frequently.
-			await _client.SetGameAsync("tModLoader");
-			await ClientLatencyUpdated(_client.Latency, _client.Latency);
-#if !TESTBOT
-			var botChannel = (ISocketMessageChannel)await _client.GetChannelAsync(242228770855976960);
-			await botChannel.SendMessageAsync("Bot has started successfully.");
-#endif
+			await DiscordClient.SetGameAsync("tModLoader");
+			await ClientLatencyUpdated(DiscordClient.Latency, DiscordClient.Latency);
+// #if !TESTBOT
+// 			var botChannel = (ISocketMessageChannel)await DiscordClient.GetChannelAsync(242228770855976960);
+// 			await botChannel.SendMessageAsync("Bot has started successfully.");
+// #endif
 
-			_interactionService = new InteractionService(_client);
-			await _interactionService.AddModulesAsync(System.Reflection.Assembly.GetEntryAssembly(), _services);
+			InteractionService = new InteractionService(DiscordClient);
+			await InteractionService.AddModulesAsync(Assembly.GetEntryAssembly(), ServiceProvider);
 #if TESTBOT
-			await _interactionService.RegisterCommandsToGuildAsync(276235094622994433); // replace this is testing on your own server.
+			await InteractionService.RegisterCommandsToGuildAsync(1236004871543718040); // replace this is testing on your own server.
 #else
-			await _interactionService.RegisterCommandsToGuildAsync(103110554649894912);
-			// await interactionService.RegisterCommandsGloballyAsync();
+			await InteractionService.RegisterCommandsToGuildAsync(1236004871543718040);
+			// await InteractionService.RegisterCommandsGloballyAsync();
 #endif
-			_client.InteractionCreated += async interaction =>
-			{
-				var ctx = new SocketInteractionContext(_client, interaction);
-				await _interactionService.ExecuteCommandAsync(ctx, _services);
-			};
-
+			DiscordClient.InteractionCreated += OnDiscordClientOnInteractionCreated;
 			Ready = true;
+		}
+
+		private async Task OnDiscordClientOnInteractionCreated(SocketInteraction interaction)
+		{
+			var ctx = new SocketInteractionContext(DiscordClient, interaction);
+			await InteractionService.ExecuteCommandAsync(ctx, ServiceProvider);
 		}
 
 		private async Task ClientGuildAvailable(SocketGuild arg)
 		{
-			await _services.GetRequiredService<RecruitmentChannelService>().SetupAsync();
-			await _services.GetRequiredService<BanAppealChannelService>().Setup();
-			await _services.GetRequiredService<SupportChannelAutoMessageService>().Setup();
-			await _services.GetRequiredService<CrosspostService>().Setup();
-			return;
+			await GetService<RecruitmentChannelService>().SetupAsync();
+			//await ServiceProvider.GetRequiredService<BanAppealChannelService>().SetupAsync();
+			await GetService<SupportChannelAutoMessageService>().SetupAsync();
+			await GetService<CrosspostService>().SetupAsync();
 		}
 	}
 }

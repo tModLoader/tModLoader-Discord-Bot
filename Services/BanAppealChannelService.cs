@@ -26,7 +26,7 @@ namespace tModloaderDiscordBot.Services
 			_client.GuildMemberUpdated += HandleGuildMemberUpdated;
 		}
 
-		internal async Task<bool> Setup()
+		internal async Task<bool> SetupAsync()
 		{
 			if (!_isSetup)
 				_isSetup = await Task.Run(() =>
@@ -43,7 +43,7 @@ namespace tModloaderDiscordBot.Services
 
 		private async Task HandleGuildMemberUpdated(Cacheable<SocketGuildUser, ulong> before, SocketGuildUser after)
 		{
-			if (!await Setup())
+			if (!await SetupAsync())
 				return;
 
 			await before.GetOrDownloadAsync().ContinueWith(async task =>

@@ -1,19 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace tModloaderDiscordBot.Components
 {
-	public enum SiteStatusCode
-	{
-		Offline,
-		Online,
-		Unknown,
-		Invalid
-	}
-
 	public class SiteStatus
 	{
 		[JsonIgnore]
@@ -72,6 +65,7 @@ namespace tModloaderDiscordBot.Components
 
 		internal bool Ping()
 		{
+			//new HttpClient()
 			var request = WebRequest.Create(Address);
 			return request.GetResponse() is HttpWebResponse response && response.StatusCode == HttpStatusCode.OK;
 		}

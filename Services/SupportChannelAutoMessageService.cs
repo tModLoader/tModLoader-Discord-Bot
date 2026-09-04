@@ -38,7 +38,7 @@ namespace tModloaderDiscordBot.Services
 
 		private async Task _client_MessageReceived(SocketMessage message)
 		{
-			if (!await Setup())
+			if (!await SetupAsync())
 				return;
 
 			if (message?.Channel?.Id != supportForumPinnedThread?.Id)
@@ -47,7 +47,7 @@ namespace tModloaderDiscordBot.Services
 			await message.DeleteAsync();
 		}
 
-		internal async Task<bool> Setup()
+		internal async Task<bool> SetupAsync()
 		{
 			if (!_isSetup)
 				_isSetup = await Task.Run(async () =>
@@ -72,7 +72,7 @@ namespace tModloaderDiscordBot.Services
 
 		private async Task _client_ThreadCreated(SocketThreadChannel thread)
 		{
-			if (!await Setup())
+			if (!await SetupAsync())
 				return;
 
 			if (thread.ParentChannel != supportForum)

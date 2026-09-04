@@ -1,11 +1,9 @@
-﻿using Discord;
-using Discord.Interactions;
-using System;
-using System.Linq;
+﻿using Discord.Interactions;
 using System.Threading.Tasks;
-using tModloaderDiscordBot.Services;
 using System.Net;
-using tModloaderDiscordBot.Utils;
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
+using tModloaderDiscordBot.Interactions;
 
 namespace tModloaderDiscordBot.Modules
 {
@@ -13,22 +11,19 @@ namespace tModloaderDiscordBot.Modules
 	/// For commands using the interaction framework
 	/// https://discordnet.dev/guides/int_framework/intro.html
 	/// </summary>
-	public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
+	public class InteractionModule(
+		IServiceScopeFactory serviceScope
+	) : InteractionModuleBase<SocketInteractionContext>
 	{
-		[SlashCommand("mod", "Shows info about a mod")]
-		public async Task Mod([Discord.Interactions.Summary("mod-name"), Autocomplete(typeof(ModNameAutocompleteHandler))] string modName)
-		{
-			modName = modName.RemoveWhitespace();
-			modName = ModService.Mods.FirstOrDefault(m => string.Equals(m, modName, StringComparison.CurrentCultureIgnoreCase));
-			if (modName == null)
-			{
-				await RespondAsync($"Mod with that name doesn't exist", ephemeral: true);
-				return;
-			}
+		/// <summary>
+		/// The MediatR instance returned by dependency injection
+		/// </summary>
+		private readonly IMediator _mediator = serviceScope.CreateScope().ServiceProvider.GetRequiredService<IMediator>();
 
-			Embed embed = await DefaultModule.GenerateModEmbed(modName, Context.Interaction.User);
-			await RespondAsync("", embed: embed);
-			//await RespondAsync($"Your choice: {parameterWithAutocompletion}", ephemeral: true);
+		[SlashCommand("mod", "Shows info about a mod")]
+		public async Task Mod([Summary("mod-name"), Autocomplete(typeof(ModNameAutocompleteHandler))] string modName)
+		{
+			await _mediator.Publish(Context.ToModCommand(this, modName));
 		}
 
 		[SlashCommand("ws", "Generates a search for a term in tModLoader wiki")]
@@ -36,17 +31,8 @@ namespace tModloaderDiscordBot.Modules
 		{
 			searchTerm = searchTerm.Trim();
 			string encoded = WebUtility.UrlEncode(searchTerm);
-			await RespondAsync($"tModLoader Wiki results for {searchTerm}: <https://github.com/tModLoader/tModLoader/search?q={encoded}&type=Wikis>");
-		}
-	}
-
-	public class ModNameAutocompleteHandler : AutocompleteHandler
-	{
-		public override async Task<AutocompletionResult> GenerateSuggestionsAsync(IInteractionContext context, IAutocompleteInteraction autocompleteInteraction, IParameterInfo parameter, IServiceProvider services)
-		{
-			string userInput = autocompleteInteraction.Data.Current.Value.ToString();
-			var mods = ModService.Mods.Where(m => m.Contains(userInput, StringComparison.CurrentCultureIgnoreCase)).Take(10).Select(x => new AutocompleteResult(x, x));
-			return AutocompletionResult.FromSuccess(mods);
+			await RespondAsync(
+				$"tModLoader Wiki results for {searchTerm}: <https://github.com/tModLoader/tModLoader/search?q={encoded}&type=Wikis>");
 		}
 	}
 }

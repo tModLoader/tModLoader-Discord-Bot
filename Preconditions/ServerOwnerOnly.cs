@@ -4,6 +4,9 @@ using Discord.Commands;
 
 namespace tModloaderDiscordBot.Preconditions
 {
+	/// <summary>
+	/// Defines an attribute which will check if the user is the server owner when executing a command
+	/// </summary>
 	internal class ServerOwnerOnly : PreconditionAttribute
 	{
 		public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)

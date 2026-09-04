@@ -9,14 +9,17 @@ using tModloaderDiscordBot.Utils;
 
 namespace tModloaderDiscordBot.Preconditions
 {
+	/// <summary>
+	/// Defines an attribute which will check if the user has the permisisons required when executing a command
+	/// </summary>
 	internal class HasPermissionAttribute : PreconditionAttribute
 	{
 		public override async Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
 		{
 			bool CheckIfBlocked(IGuildUser user, BotPermissions gPerms)
 			{
-				return gPerms.IsBlocked(context.User.Id) 
-				       || user.RoleIds.Any(gPerms.IsBlocked);
+				return gPerms.IsBlocked(context.User.Id)
+					   || user.RoleIds.Any(gPerms.IsBlocked);
 			}
 
 			bool HasPermissions(string key, IGuildUser user, BotPermissions gPerms)
